@@ -10,7 +10,7 @@ Nous avons décidé de faire un jeu du style Pictionary.
 ## Rôles:
 - William : Responsable (Rapport)
 - Hugo : Chercheur (Rapport technos)
-- Asmaa : Codeuse
+- Asmaa : Codeuse (Test Konva)
 - Christian : Codeur
 
 ## Ce qu'on a appris (recherches technos)
@@ -45,11 +45,9 @@ Nous avons décidé de faire un jeu du style Pictionary.
 - Organisation :
 	- Rôles déterminés le Dimanche soir
    	- Certains avaient des retards dans leur rendus respectifs (Ranking, Calcul sécurisé...)
-	- Ce qui a amené à peu(pas) d'avancées sur le code
-
-- 49.3
+	- Ce qui a amené à peu d'avancées sur le code lui-même
 
 ## Les avancées du code :
 
 
-- Corps HTML ultra simple (rien)
+- Test simple du Framework Konva pour afficher des formes basiques sur la page
