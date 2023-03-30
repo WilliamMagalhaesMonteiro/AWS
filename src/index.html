@@ -7,15 +7,50 @@
 <head>
 	<title>Pictionary</title>
 	<link rel="stylesheet" href="./style.css" />
+	<script src="https://unpkg.com/konva@8.3.14/konva.min.js"></script>
 </head>
 
 <body>
+	
 	<h1>Pictionary</h1>
 
-	<div id = "bienvenue">
-		Vous pouvez déjà prendre un marqueur pour dessiner sur l'écran, par contre la fonction effacer n'est pas implémentée...<br>
-		Et le propriétaire vous retrouvera.
-	</div>
+	<div id = "bienvenue"></div>
+	<script>
+		var width=window.innerWidth ;
+		var height=window.innerHeight ;
+
+		var stage = new Konva.Stage({
+		container:"bienvenue",
+		 
+		width: width,
+		height: height,
+		});
+
+		var layer = new Konva.Layer();
+		stage.add(layer);
+
+		var triangle = new Konva.RegularPolygon({
+			x: 750,
+			y: 320,
+			sides: 3,
+			radius: 100,
+			fill:"blue",
+			stroke:"black",
+			strokeWidth: 4,
+		});
+		layer.add(triangle);
+		var circle = new Konva.Circle({
+			x: 1000,
+			y: 300,
+		    radius: 100,
+			fill:"blue",
+			stroke:"black",
+			strokeWidth: 4,
+		});
+		layer.add(circle);
+		console.log("ok")
+
+	</script>
 </body>
 
 
