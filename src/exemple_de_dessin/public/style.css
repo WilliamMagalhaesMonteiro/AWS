@@ -1,0 +1,46 @@
+body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #f0f0f0;
+}
+
+#bouton-noir {
+  background-color: #000000;
+  width: 20px;
+  height: 20px;
+}
+
+
+#bouton-rouge {
+  background-color: #df4b26;
+  width: 20px;
+  height: 20px;
+}
+
+#bouton-vert {
+  background-color: #008000;
+  width: 20px;
+  height: 20px;
+}
+
+#bouton-5 {
+  background-color: black;
+  border-radius: 100%;
+  width: 15px;
+  height: 15px;
+}
+
+
+#bouton-20 {
+  background-color: black;
+  border-radius: 100%;
+  width: 30px;
+  height: 30px;
+}
+
+#container {
+  background-color: pink;
+  height: 400px;
+  width: 400 px;
+}
