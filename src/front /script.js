@@ -14,6 +14,7 @@ stage.add(layer);
 
 var isPaint = false;    // initialisation de isPaint -> on ne peind pas encore.
 var mode = 'brush';
+var color = 'black';
 var lastLine;
 
 // function to sendData
@@ -22,12 +23,35 @@ const sendData = (eventName, data) => {
     // todo? -> wait for backend to finish;
 }
 
+// https://developer.mozilla.org/en-US/docs/Web/API/Window/DOMContentLoaded_event
+window.addEventListener("DOMContentLoaded", (event) => {
+    console.log("DOM fully loaded and parsed");
+    const buttonBlue = document.getElementById('choose-blue-button');
+    const buttonRed = document.getElementById('choose-red-button');
+    const buttonGreen = document.getElementById('choose-green-button');
+    const buttonYellow = document.getElementById('choose-yellow-button');
+
+    buttonBlue.addEventListener('click', (e) =>{
+        color = 'blue';
+    });
+    buttonRed.addEventListener('click', (e) =>{
+        color = 'red';
+    });
+    buttonGreen.addEventListener('click', (e) =>{
+        color = 'green';
+    });
+    buttonYellow.addEventListener('click', (e) =>{
+        color = 'yellow';
+    });
+});
+
+
 // STEP 1 - évènement : on clique ->
 stage.on('mousedown touchstart', function (e) {
     isPaint = true;
     var pos = stage.getPointerPosition();   // position du cursuer
     lastLine = new Konva.Line({
-        stroke: 'black',
+        stroke: color,
         strokeWidth: 10,
         globalCompositeOperation:
         mode === 'brush' ? 'source-over' : 'destination-out',

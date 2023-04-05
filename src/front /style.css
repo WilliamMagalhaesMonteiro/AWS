@@ -66,7 +66,7 @@ body {
     margin-right: 5px;
     /* -------------- */
     border: 0.1rem solid lavender;
-    width: 1000px;
+    width: 1200px;
     height: 600px;
 }
 
@@ -129,4 +129,25 @@ body {
     margin-bottom: 5px;
     margin-right: 5px;
     margin-left: 5px;
+}
+
+.green {background-color: #4CAF50;} /* Green */
+.blue {background-color: #008CBA;} /* Blue */
+.red {background-color: #f44336;} /* Red */
+.gray {background-color: #e7e7e7; color: black;} /* Gray */
+.black {background-color: #555555;} /* Black */
+.yellow {background-color: #eff309;} /* Green */
+
+
+/* https://www.w3schools.com/css/tryit.asp?filename=trycss_buttons_color */
+.button-colored {
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
 }
