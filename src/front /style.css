@@ -89,7 +89,7 @@ body {
 }
 
 #chat-body p:nth-child(2n) {
-    background-color: rgb(218, 218, 218);
+    background-color: rgba(218, 218, 218, 0.842);
 }
 
 #chat-body p {
