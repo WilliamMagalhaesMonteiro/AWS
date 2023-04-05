@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+
+
+<html>
+
+<head>
+	<title>Pictionary</title>
+	<link rel="stylesheet" href="./style.css" />
+	<script src="https://unpkg.com/konva@8.3.14/konva.min.js"></script>
+	<script src="./script.js" defer></script>
+</head>
+
+<body>
+	<h1>Pictionary 2</h1>
+	Tool:
+	<select id="tool">
+		<option value="brush">Brush</option>
+		<option value="eraser">Eraser</option>
+	</select>
+	
+	<div id="word-to-find-box">
+		<p id="word-to-find">_ _ _ _ A _</p>
+	</div>
+	<br>
+	<div id="big-container">
+		<div id="users-container">
+			<div class="players-list">
+				<div class="player">
+				   <div class="player-avatar-container">
+					  <div class="avatar">
+						 <div class="color" style="background-position: -700% -100%;"></div>
+						 <div class="eyes" style="background-position: -500% -300%;"></div>
+						 <div class="mouth" style="background-position: -100% -400%;"></div>
+						 <div class="special" style="display: none;"></div>
+						 <div class="owner" style="display: none;"></div>
+						 <div class="drawing" style="display: none;"></div>
+					  </div>
+				   </div>
+				   <div class="player-info">
+					  <div class="player-name me">quesadilla (You)</div>
+					  <div class="player-rank first">#1</div>
+					  <div class="player-score">0 points</div>
+				   </div>
+				   <div class="player-icons">
+					  <div class="icon owner"></div>
+					  <div class="icon muted"></div>
+				   </div>
+				</div>
+				<div class="player ">
+				   <div class="player-avatar-container">
+					  <div class="avatar">
+						 <div class="color" style="background-position: -700% -100%;"></div>
+						 <div class="eyes" style="background-position: -500% -300%;"></div>
+						 <div class="mouth" style="background-position: -100% -400%;"></div>
+						 <div class="special" style="display: none;"></div>
+						 <div class="owner" style="display: none;"></div>
+						 <div class="drawing" style="display: none;"></div>
+					  </div>
+				   </div>
+				   <div class="player-info">
+					  <div class="player-name me">quesadilla (You)</div>
+					  <div class="player-rank first">#1</div>
+					  <div class="player-score">0 points</div>
+				   </div>
+				   <div class="player-icons">
+					  <div class="icon owner"></div>
+					  <div class="icon muted"></div>
+				   </div>
+				</div>
+				<div class="player ">
+				   <div class="player-avatar-container">
+					  <div class="avatar">
+						 <div class="color" style="background-position: -700% -100%;"></div>
+						 <div class="eyes" style="background-position: -500% -300%;"></div>
+						 <div class="mouth" style="background-position: -100% -400%;"></div>
+						 <div class="special" style="display: none;"></div>
+						 <div class="owner" style="display: none;"></div>
+						 <div class="drawing" style="display: none;"></div>
+					  </div>
+				   </div>
+				   <div class="player-info">
+					  <div class="player-name me">quesadilla (You)</div>
+					  <div class="player-rank first">#1</div>
+					  <div class="player-score">0 points</div>
+				   </div>
+				   <div class="player-icons">
+					  <div class="icon owner"></div>
+					  <div class="icon muted"></div>
+				   </div>
+				</div>
+			</div>
+			 
+		</div>
+		<div id="middle-container">
+			<div id="drawing-container"></div>
+		</div>
+		<div id="chat-container">
+			<form id="chat-form">
+				<div id="chat-contents-flex-box">
+					<div id="chat-body">
+						<p style="color: black"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: blue"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: black"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: blue"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: black"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: blue"><b>Bomberman: </b><span>e</span></p>
+						<p style="color: black"><b>Bomberman: </b><span>e</span></p>
+					</div>
+					<div id="chat-footer">
+						<input type="text" autocomplete="off" placeholder="Type your guess here..." maxlength="100" data-translate="placeholder">
+					</div>
+				</div>
+				
+			</form>
+		</div>
+	</div>
+
+</body>
+
+
+</html>

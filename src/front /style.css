@@ -1,0 +1,95 @@
+h1 {
+    text-align: center;
+    color: blue;
+    font-size: 500%;
+
+}
+
+body {
+    background-image: url("https://cdn.pixabay.com/photo/2021/04/03/12/12/background-6147356_1280.jpg");
+    background-size: cover;
+}
+
+#bienvenue{
+    color: red  ;
+    text-align: center;
+    font-size: 150%;
+    border: 1rem solid;
+}
+
+#big-container {
+    width: 100%;
+    display: flex;
+}
+
+#chat-contents-flex-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+
+#chat-footer {
+    /* ajoute de l'espace après le tag */
+    margin-bottom: 15px; 
+}
+
+#chat-form {
+    height: 100%;
+}
+
+#word-to-find-box {
+    /* align center */
+    margin-left: auto;
+    margin-right: auto;
+    /* -------------- */
+    text-align: center;
+    background-color: rgb(187, 187, 187);
+
+    /* ajouter de l'espace */
+    padding-top: 2px;
+    padding-bottom: 2px;
+    /* TODO: transformer en grid */
+    width: 36%;
+}
+
+#word-to-find {
+    font-size: 2rem;
+}
+
+/* 3 containers globaux */
+#middle-container {
+    /* align center */
+    margin-left: 5px;
+    margin-right: 5px;
+    /* -------------- */
+    border: 0.1rem solid green;
+    width: 600px;
+    height: 600px;
+}
+
+#chat-container {
+    /* margin-left: 5px;
+    margin-right: 5px; */
+    width: 100%;
+    border: 0.1rem solid green;
+    background-color: rgb(187, 187, 187);
+    
+}
+
+#users-container {
+    margin-left: 5px;
+    margin-right: 5px;
+    width: 100%;
+    border: 0.1rem solid green;
+    background-color: rgb(187, 187, 187);
+    
+}
+
+#chat-body p:nth-child(2n) {
+    background-color: rgb(218, 218, 218);
+}
+
+#chat-body p {
+    padding-left: 10px;
+}
