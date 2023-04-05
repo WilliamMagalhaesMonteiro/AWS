@@ -1,12 +1,12 @@
 h1 {
     text-align: center;
-    color: blue;
-    font-size: 500%;
+    color: rgb(3, 3, 3);
+    font-size: 200%;
 
 }
 
 body {
-    background-image: url("https://cdn.pixabay.com/photo/2021/04/03/12/12/background-6147356_1280.jpg");
+    background-image: url("https://i.pinimg.com/originals/21/61/1b/21611b38a1a7f75b483162fe7386c326.jpg");
     background-size: cover;
 }
 
@@ -21,6 +21,8 @@ body {
     width: 100%;
     display: flex;
 }
+
+
 
 #chat-contents-flex-box {
     display: flex;
@@ -44,7 +46,7 @@ body {
     margin-right: auto;
     /* -------------- */
     text-align: center;
-    background-color: rgb(187, 187, 187);
+    background-color: rgba(199, 196, 190, 0.199);
 
     /* ajouter de l'espace */
     padding-top: 2px;
@@ -63,24 +65,24 @@ body {
     margin-left: 5px;
     margin-right: 5px;
     /* -------------- */
-    border: 0.1rem solid green;
-    width: 600px;
+    border: 0.1rem solid lavender;
+    width: 1000px;
     height: 600px;
 }
 
 #chat-container {
     /* margin-left: 5px;
     margin-right: 5px; */
-    width: 100%;
-    border: 0.1rem solid green;
+    width: 20%;
+    border: 0.1rem solid lavender;
     background-color: rgb(187, 187, 187);
     
 }
 
 #users-container {
     margin-left: 5px;
-    margin-right: 5px;
-    width: 100%;
+    margin-right: 100px;
+    width: 20%;
     border: 0.1rem solid green;
     background-color: rgb(187, 187, 187);
     
@@ -92,4 +94,39 @@ body {
 
 #chat-body p {
     padding-left: 10px;
+}
+
+
+.player-rank {
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+.player-container {
+    display: flex;
+    justify-content: space-between;
+    background-color: rgb(202, 243, 254);
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.align-vertical {  
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.full-height {
+    height: 100%;
+}
+
+.no-margin {
+    margin:0;
+}
+
+.player-container {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
 }

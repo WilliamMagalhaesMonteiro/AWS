@@ -1,4 +1,4 @@
-var width = 600;    // 100;//window.innerWidth;
+var width = 1200;    // 100;//window.innerWidth;
 var height = 600;   // 100; //window.innerHeight - 25;
 
 // first we need Konva core things: stage and layer
@@ -27,8 +27,8 @@ stage.on('mousedown touchstart', function (e) {
     isPaint = true;
     var pos = stage.getPointerPosition();   // position du cursuer
     lastLine = new Konva.Line({
-        stroke: '#df4b26',
-        strokeWidth: 5,
+        stroke: 'black',
+        strokeWidth: 10,
         globalCompositeOperation:
         mode === 'brush' ? 'source-over' : 'destination-out',
         // round cap for smoother lines
