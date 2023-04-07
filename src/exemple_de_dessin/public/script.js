@@ -9,6 +9,7 @@ const bouton_rouge = document.getElementById("bouton-rouge")
 const bouton_5 = document.getElementById("bouton-5")
 const bouton_20 = document.getElementById("bouton-20")
 
+const socket = io();
 
 // first we need Konva core things: stage and layer
 var stage = new Konva.Stage({
@@ -37,18 +38,26 @@ bouton_rouge.addEventListener("click",function(){
 
 bouton_vert.addEventListener("click", function() {
     color = "#008000";
-  });
-
+});
 
 
 bouton_5.addEventListener("click", function() {
     epaisseur = 5;
-  });
+});
 
-  bouton_20.addEventListener("click", function() {
+bouton_20.addEventListener("click", function() {
     epaisseur = 20;
-  });
+});
 
+
+socket.on("serv draw new", function (drawable) {
+    layer.add(drawable);
+});
+
+socket.on("serv draw new pt", function (pt) {
+    var newPoints = lastLine.points().concat([pt.x, pt.y]);
+    lastLine.points(newPoints);
+});
 
 stage.on('mousedown touchstart', function (e) {
     isPaint = true;
@@ -65,6 +74,8 @@ stage.on('mousedown touchstart', function (e) {
         points: [pos.x, pos.y, pos.x, pos.y],
     });
     layer.add(lastLine);
+    socket.emit("client draw new", lastLine);
+
 });
 
 stage.on('mouseup touchend', function () {
@@ -81,6 +92,7 @@ stage.on('mousemove touchmove', function (e) {
     e.evt.preventDefault();
 
     const pos = stage.getPointerPosition();
+    socket.emit("client draw new pt", pos);
     var newPoints = lastLine.points().concat([pos.x, pos.y]);
     lastLine.points(newPoints);
 });
