@@ -46,3 +46,27 @@ body {
   height: 500px;
   width: 600px;
 }
+
+#tools img {
+  margin-left: 0.5%;
+  margin-top: 1%;
+  border: 2px solid;
+  border-color: #000000;
+  height: 40px;
+  width: 40px;
+  image-rendering: pixelated;
+}
+
+#colors {
+  display: flex;
+  flex-direction: row;
+}
+
+#colors div{
+  border: 2px solid;
+  margin-left: 0.5%;
+  margin-top: 1%;
+  margin-bottom: 1%;
+  height: 40px;
+  width: 40px;
+}

@@ -1,18 +1,31 @@
 var wwidth = window.innerWidth;
 var wheight = window.innerHeight;
 const fenetre = window;
+/*
+const bouton_noir = document.getElementById("bouton-noir");
+const bouton_vert = document.getElementById("bouton-vert");
+const bouton_rouge = document.getElementById("bouton-rouge");
+*/
+const bouton_5 = document.getElementById("bouton-5");
+const bouton_20 = document.getElementById("bouton-20");
 
-const bouton_noir = document.getElementById("bouton-noir")
-const bouton_vert = document.getElementById("bouton-vert")
-const bouton_rouge = document.getElementById("bouton-rouge")
+const container = document.getElementById("container");
 
-const bouton_5 = document.getElementById("bouton-5")
-const bouton_20 = document.getElementById("bouton-20")
+const outils = document.getElementById("tools");
+const crayon = document.getElementById("crayon");
+const gomme = document.getElementById("gomme");
+const rond = document.getElementById("rond");
+const couleursDiv = document.getElementById("colors");
 
-const container = document.getElementById("container")
+const couleurs = ["#ff0000", "#00ff00", "#0000ff", "#ffff00", "#00ffff", "#ff00ff", "#000000", "#ffffff"];
+
+for (let i = 0; i < couleurs.length; i++) {
+    let newDiv = document.createElement("div");
+    newDiv.style.backgroundColor = couleurs[i];
+    couleursDiv.appendChild(newDiv);
+}
+
 const ctnOffset = {x: container.offsetLeft, y: container.offsetTop};
-
-const select = document.getElementById("tool")
 
 const socket = io();
 
@@ -29,10 +42,10 @@ stage.add(layer);
 var isPaint = false;
 var onStage = false;
 var outil = 'brush';
-var color = '#df4b26'
+var color = couleurs[0];
 var epaisseur = 5;
 var lastLine;
-
+/*
 bouton_noir.addEventListener("click",function(){
     color = "#000000";
 });
@@ -45,7 +58,7 @@ bouton_rouge.addEventListener("click",function(){
 bouton_vert.addEventListener("click", function() {
     color = "#008000";
 });
-
+*/
 
 bouton_5.addEventListener("click", function() {
     epaisseur = 5;
@@ -106,21 +119,12 @@ function newLine(e) {
     layer.add(lastLine);
 }
 
-// Nouveau trait quand le curseur retourne au-dessus de la zone de dessin, 
-// sauf si le clic a été relaché entre temps.
-function reLine(e) {
-    if (isPaint) {
-        newLine(e);
-    }
-}
-
 // Nouveau segment sur le trait à chaque déplacement de souris.
 function newPoint(e) {
     if (!isPaint)
         return;
     //const pos = stage.getPointerPosition();
     const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
-    console.log("%d %d %d %d %d %d", e.pageX, e.pageY, pos.x, pos.y, ctnOffset.x, ctnOffset.y)
     var props = {coords: pos};
     var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
     socket.emit("ctos draw point", props);
@@ -135,7 +139,7 @@ function endLine(e) {
 // Un disque (rond) est tracé sur un clic
 function nouveauRond() {
     var pos = stage.getPointerPosition();
-    var props = {coords:pos, radius: epaisseur * 5, fill: color};
+    var props = {coords:pos, radius: epaisseur * 2, fill: color};
     var rond = new Konva.Circle({
         x: props.coords.x,
         y: props.coords.y,
@@ -145,41 +149,53 @@ function nouveauRond() {
 
     socket.emit("ctos draw cercle", props);
     layer.add(rond);
+    
 }
 
 // La gestion des événements de base, ceux du pinceau et de la gomme.
 function defaultBinds() {
     window.addEventListener('mousedown', newLine);
-    /*window.addEventListener('mousedown', function(e) {
-        const pos = {x: e.pageX, y: e.pageY};
-        const pos2 = stage.getAbsolutePosition();
-        if (stage.getIntersection(pos)) {
-            console.log("onstage");
-        } else {
-            console.log("outstage %d %d, %d %d", e.clientX, e.clientY, pos2.x, pos2.y);
-        }
-    })*/
     window.addEventListener('mousemove', newPoint);
     window.addEventListener('mouseup', endLine);
-    //stage.on('mouseenter', reLine);
 }
 
-// Bouton des outils, à chaque changement d'outil, on refait tous les événements.
-select.addEventListener('change', function () {
+function changeOutil(tool) {
+    outil = tool;
+    var children = outils.children;
+    for (let i = 0; i < children.length; i++) {
+        children[i].style.borderColor = "black";
+    }
+
     stage.off();
     window.removeEventListener('mousedown', newLine);
     window.removeEventListener('mouseup', endLine);
     window.removeEventListener('mousemove', newPoint);
-    outil = select.value;
-    switch (outil) {
-        case 'rond' :
-            stage.on('mousedown', nouveauRond);
-            break;
-        case 'brush' :
-        case 'eraser' :
-            defaultBinds();
-            break;
-    }
+}
+
+crayon.addEventListener('click', function() {
+    changeOutil('brush');
+    crayon.style.borderColor = "red";
+    defaultBinds();
 });
+gomme.addEventListener('click', function() {
+    changeOutil('eraser');
+    gomme.style.borderColor = "red";
+    defaultBinds();
+});
+rond.addEventListener('click', function() {
+    changeOutil('rond');
+    rond.style.borderColor = "red";
+    stage.on('mousedown', nouveauRond);
+});
+
+var cchild = couleursDiv.children;
+for (let i = 0; i < cchild.length; i++) {
+    cchild[i].addEventListener('click', function() {
+        for (let j = 0; j < cchild.length; j++)
+            cchild[j].style.borderColor = 'black';
+        cchild[i].style.borderColor = 'red';
+        color = couleurs[i];
+    });
+}
 
 defaultBinds();
