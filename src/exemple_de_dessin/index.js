@@ -11,12 +11,19 @@ app.use(express.static(__dirname + '/public'));
 // connexion
 io.on("connection", function(socket) {
 
-
     // quand un client envoie une nouvelle forme
-    socket.on("client draw new", function(drawable){
+    socket.on("ctos draw cercle", function(props){
 
         // nouvelle forme envoyée à tous les autres clients
-        socket.broadcast.emit("serv draw new", drawable);
+        socket.broadcast.emit("stoc draw cercle", props);
+    });
+
+    socket.on("ctos draw line", function(props) {
+        socket.broadcast.emit("stoc draw line", props);
+    });
+
+    socket.on("ctos draw point", function(props) {
+        socket.broadcast.emit("stoc draw point", props);
     });
 });
 

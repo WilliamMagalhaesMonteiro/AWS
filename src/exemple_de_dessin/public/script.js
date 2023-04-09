@@ -1,28 +1,32 @@
-var width = window.innerWidth;
-var height = window.innerHeight - 25;
+var wwidth = window.innerWidth;
+var wheight = window.innerHeight;
+const fenetre = window;
 
 const bouton_noir = document.getElementById("bouton-noir")
 const bouton_vert = document.getElementById("bouton-vert")
 const bouton_rouge = document.getElementById("bouton-rouge")
 
-
 const bouton_5 = document.getElementById("bouton-5")
 const bouton_20 = document.getElementById("bouton-20")
 
+const container = document.getElementById("container")
+
+const select = document.getElementById("tool")
+
 const socket = io();
 
-// first we need Konva core things: stage and layer
 var stage = new Konva.Stage({
     container: 'container',
-    width: width,
-    height: height,
+    width: container.clientWidth,
+    height: container.clientHeight,
 });
 
 var layer = new Konva.Layer();
 stage.add(layer);
 
 var isPaint = false;
-var mode = 'brush';
+var onStage = false;
+var outil = 'brush';
 var color = '#df4b26'
 var epaisseur = 5;
 var lastLine;
@@ -49,55 +53,111 @@ bouton_20.addEventListener("click", function() {
     epaisseur = 20;
 });
 
-
-socket.on("serv draw new", function (drawable) {
-    layer.add(drawable);
-});
-
-socket.on("serv draw new pt", function (pt) {
-    var newPoints = lastLine.points().concat([pt.x, pt.y]);
-    lastLine.points(newPoints);
-});
-
-stage.on('mousedown touchstart', function (e) {
-    isPaint = true;
-    var pos = stage.getPointerPosition();
+socket.on("stoc draw line", function (props) {
     lastLine = new Konva.Line({
-        stroke: color,
-        strokeWidth: epaisseur,
-        globalCompositeOperation:
-            mode === 'brush' ? 'source-over' : 'destination-out',
-        // round cap for smoother lines
+        stroke: props.clr,
+        strokeWidth: props.width,
+        globalCompositeOperation: props.mode,
         lineCap: 'round',
         lineJoin: 'round',
-        // add point twice, so we have some drawings even on a simple click
-        points: [pos.x, pos.y, pos.x, pos.y],
+        points: [props.coords.x, props.coords.y, props.coords.x, props.coords.y],
     });
     layer.add(lastLine);
-    socket.emit("client draw new", lastLine);
-
 });
 
-stage.on('mouseup touchend', function () {
-    isPaint = false;
-});
-
-// and core function - drawing
-stage.on('mousemove touchmove', function (e) {
-    if (!isPaint) {
-        return;
-    }
-
-    // prevent scrolling on touch devices
-    e.evt.preventDefault();
-
-    const pos = stage.getPointerPosition();
-    socket.emit("client draw new pt", pos);
-    var newPoints = lastLine.points().concat([pos.x, pos.y]);
+socket.on("stoc draw point", function (props) {
+    var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
     lastLine.points(newPoints);
 });
 
-var select = document.getElementById('tool');
-select.addEventListener('change', function () {
-    mode = select.value;
+// Le client reçoit un cercle du serveur.
+socket.on("stoc draw cercle", function (props) {
+    var rond = new Konva.Circle({
+        x: props.coords.x,
+        y: props.coords.y,
+        radius: props.radius,
+        fill: props.fill,
+    });
+    layer.add(rond);
 });
+
+// Début d'un nouveau trait.
+function newLine(e) {
+    isPaint = true;
+    const pos = stage.getPointerPosition();
+    var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out'};
+    lastLine = new Konva.Line({
+        stroke: props.clr,
+        strokeWidth: props.width,
+        globalCompositeOperation: props.mode,
+        lineCap: 'round',
+        lineJoin: 'round',
+        points: [props.coords.x, props.coords.y, props.coords.x, props.coords.y],
+    });
+    socket.emit("ctos draw line", props);
+    layer.add(lastLine);
+
+}
+
+// Nouveau trait quand le curseur retourne au-dessus de la zone de dessin, 
+// sauf si le clic a été relaché entre temps.
+function reLine(e) {
+    if (isPaint) {
+        newLine(e);
+    }
+}
+
+// Nouveau segment sur le trait à chaque déplacement de souris.
+function newPoint(e) {
+    if (!isPaint)
+        return;
+    const pos = stage.getPointerPosition();
+    var props = {coords: pos};
+    var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
+    socket.emit("ctos draw point", props);
+    lastLine.points(newPoints);
+}
+
+// Le clic est relaché.
+function endLine(e) {
+    isPaint = false;
+}
+
+// Un disque (rond) est tracé sur un clic
+function nouveauRond() {
+    var pos = stage.getPointerPosition();
+    var props = {coords:pos, radius: epaisseur * 5, fill: color};
+    var rond = new Konva.Circle({
+        x: props.coords.x,
+        y: props.coords.y,
+        radius: props.radius,
+        fill: props.fill,
+    });
+    socket.emit("ctos draw cercle", props);
+    layer.add(rond);
+}
+
+// La gestion des événements de base, ceux du pinceau et de la gomme.
+function defaultBinds() {
+    stage.on('mousedown', newLine);
+    stage.on('mousemove', newPoint);
+    window.addEventListener('mouseup', endLine);
+    stage.on('mouseenter', reLine);
+}
+
+// Bouton des outils, à chaque changement d'outil, on refait tous les événements.
+select.addEventListener('change', function () {
+    stage.off();
+    outil = select.value;
+    switch (outil) {
+        case 'rond' :
+            stage.on('mousedown', nouveauRond);
+            break;
+        case 'brush' :
+        case 'eraser' :
+            defaultBinds();
+            break;
+    }
+});
+
+defaultBinds();
