@@ -10,6 +10,7 @@ const bouton_5 = document.getElementById("bouton-5")
 const bouton_20 = document.getElementById("bouton-20")
 
 const container = document.getElementById("container")
+const ctnOffset = {x: container.offsetLeft, y: container.offsetTop};
 
 const select = document.getElementById("tool")
 
@@ -22,6 +23,7 @@ var stage = new Konva.Stage({
 });
 
 var layer = new Konva.Layer();
+layer.listening(false);
 stage.add(layer);
 
 var isPaint = false;
@@ -81,10 +83,15 @@ socket.on("stoc draw cercle", function (props) {
     layer.add(rond);
 });
 
+function getPtrPosStage({x, y}) {
+    return {x: x - ctnOffset.x, y: y - ctnOffset.y};
+}
+
 // Début d'un nouveau trait.
 function newLine(e) {
     isPaint = true;
-    const pos = stage.getPointerPosition();
+    //const pos = stage.getPointerPosition();
+    const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
     var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out'};
     lastLine = new Konva.Line({
         stroke: props.clr,
@@ -94,9 +101,9 @@ function newLine(e) {
         lineJoin: 'round',
         points: [props.coords.x, props.coords.y, props.coords.x, props.coords.y],
     });
+
     socket.emit("ctos draw line", props);
     layer.add(lastLine);
-
 }
 
 // Nouveau trait quand le curseur retourne au-dessus de la zone de dessin, 
@@ -111,7 +118,9 @@ function reLine(e) {
 function newPoint(e) {
     if (!isPaint)
         return;
-    const pos = stage.getPointerPosition();
+    //const pos = stage.getPointerPosition();
+    const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
+    console.log("%d %d %d %d %d %d", e.pageX, e.pageY, pos.x, pos.y, ctnOffset.x, ctnOffset.y)
     var props = {coords: pos};
     var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
     socket.emit("ctos draw point", props);
@@ -133,21 +142,34 @@ function nouveauRond() {
         radius: props.radius,
         fill: props.fill,
     });
+
     socket.emit("ctos draw cercle", props);
     layer.add(rond);
 }
 
 // La gestion des événements de base, ceux du pinceau et de la gomme.
 function defaultBinds() {
-    stage.on('mousedown', newLine);
-    stage.on('mousemove', newPoint);
+    window.addEventListener('mousedown', newLine);
+    /*window.addEventListener('mousedown', function(e) {
+        const pos = {x: e.pageX, y: e.pageY};
+        const pos2 = stage.getAbsolutePosition();
+        if (stage.getIntersection(pos)) {
+            console.log("onstage");
+        } else {
+            console.log("outstage %d %d, %d %d", e.clientX, e.clientY, pos2.x, pos2.y);
+        }
+    })*/
+    window.addEventListener('mousemove', newPoint);
     window.addEventListener('mouseup', endLine);
-    stage.on('mouseenter', reLine);
+    //stage.on('mouseenter', reLine);
 }
 
 // Bouton des outils, à chaque changement d'outil, on refait tous les événements.
 select.addEventListener('change', function () {
     stage.off();
+    window.removeEventListener('mousedown', newLine);
+    window.removeEventListener('mouseup', endLine);
+    window.removeEventListener('mousemove', newPoint);
     outil = select.value;
     switch (outil) {
         case 'rond' :
