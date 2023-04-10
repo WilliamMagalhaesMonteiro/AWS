@@ -25,6 +25,18 @@ io.on("connection", function(socket) {
     socket.on("ctos draw point", function(props) {
         socket.broadcast.emit("stoc draw point", props);
     });
+
+    socket.on("ctos delete", function() {
+        socket.broadcast.emit("stoc delete");
+    });
+
+    socket.on("ctos undo", function() {
+        socket.broadcast.emit("stoc undo");
+    });
+
+    socket.on("ctos redo", function() {
+        socket.broadcast.emit("stoc redo");
+    });
 });
 
 server.listen(3000, () => {
