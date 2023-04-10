@@ -91,15 +91,13 @@ function addContent(ctt) {
         let toDelete = content.length - sizeDrawn;
         content.splice(-toDelete, toDelete);
     }
-    
     layer.add(ctt);
     content.push(ctt);
     sizeDrawn++;
 }
 
-
-socket.on("stoc draw line", function (props) {
-    lastLine = new Konva.Line({
+function buildNewLine(props) {
+    return new Konva.Line({
         stroke: props.clr,
         strokeWidth: props.width,
         globalCompositeOperation: props.mode,
@@ -107,44 +105,95 @@ socket.on("stoc draw line", function (props) {
         lineJoin: 'round',
         points: [props.coords.x, props.coords.y, props.coords.x, props.coords.y],
     });
-    addContent(lastLine);
-});
+}
 
-socket.on("stoc draw point", function (props) {
-    var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
-    lastLine.points(newPoints);
-});
-
-// Le client reçoit un cercle du serveur.
-socket.on("stoc draw cercle", function (props) {
-    var rond = new Konva.Circle({
+function buildNewCircle(props) {
+    return new Konva.Circle({
         x: props.coords.x,
         y: props.coords.y,
         radius: props.radius,
         fill: props.fill,
     });
-    addContent(rond);
-});
+}
 
-socket.on("stoc delete", function() {
+function stocNewLine(props) {
+    lastLine = buildNewLine(props);
+    addContent(lastLine);
+}
+
+function stocNewPoint(props) {
+    lastLine.points(lastLine.points().concat([props.coords.x, props.coords.y]));
+}
+
+function stocCacheLine() {
+    lastLine.cache();
+}
+
+function stocNewCircle(props) {
+    addContent(buildNewCircle(props));
+}
+
+function stocDelete() {
     layer.destroyChildren();
     sizeDrawn = 0;
     content.splice(0, content.length);
-});
+}
 
-socket.on("stoc undo", function() {
+function stocUndo() {
     if (sizeDrawn > 0) {
         sizeDrawn--;
         content[sizeDrawn].remove();
     }
-});
+}
 
-socket.on("stoc redo", function() {
+function stocRedo() {
     if (sizeDrawn < content.length) {
         layer.add(content[sizeDrawn]);
         sizeDrawn++;
     }
+}
+
+socket.on("stoc stack", function(stack) {
+    for(let elem of stack) {
+        switch(elem.type) {
+            case 'newLine':
+                stocNewLine(elem.props);
+                break;
+            case 'newPoint':
+                stocNewPoint(elem.props);
+                break;
+            case 'cacheLine':
+                stocCacheLine();
+                break;
+            case 'newCircle':
+                stocNewCircle(elem.props);
+                break;
+            case 'undo':
+                stocUndo();
+                break;
+            case 'redo':
+                stocRedo();
+                break;
+            default:
+                break;
+        }
+    }
 });
+
+socket.on("stoc draw line", stocNewLine);
+
+socket.on("stoc draw point", stocNewPoint);
+
+socket.on("stoc cache line", stocCacheLine);
+
+// Le client reçoit un cercle du serveur.
+socket.on("stoc draw cercle", stocNewCircle);
+
+socket.on("stoc delete", stocDelete);
+
+socket.on("stoc undo", stocUndo);
+
+socket.on("stoc redo", stocRedo);
 
 // Calcule la position du curseur relativement à la zone de dessin à partir de la position absolue sur la fenêtre.
 function getPtrPosStage({x, y}) {
@@ -157,14 +206,7 @@ function newLine(e) {
     //const pos = stage.getPointerPosition();
     const pos = stage.getPointerPosition();
     var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out'};
-    lastLine = new Konva.Line({
-        stroke: props.clr,
-        strokeWidth: props.width,
-        globalCompositeOperation: props.mode,
-        lineCap: 'round',
-        lineJoin: 'round',
-        points: [props.coords.x, props.coords.y, props.coords.x, props.coords.y],
-    });
+    lastLine = buildNewLine(props);
     socket.emit("ctos draw line", props);
     addContent(lastLine);
 }
@@ -183,19 +225,18 @@ function newPoint(e) {
 
 // Le clic est relaché.
 function endLine(e) {
-    isPaint = false;
+    if (isPaint) {
+        isPaint = false;
+        lastLine.cache();
+        socket.emit("ctos cache line");
+    }
 }
 
 // Un disque (rond) est tracé sur un clic
 function nouveauRond() {
     var pos = stage.getPointerPosition();
     var props = {coords:pos, radius: epaisseur * 2, fill: color};
-    var rond = new Konva.Circle({
-        x: props.coords.x,
-        y: props.coords.y,
-        radius: props.radius,
-        fill: props.fill,
-    });
+    var rond = buildNewCircle(props);
     socket.emit("ctos draw cercle", props);
     addContent(rond);
 }
