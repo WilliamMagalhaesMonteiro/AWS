@@ -76,7 +76,7 @@ stage.add(layer);
 
 var isPaint = false;
 var outil = outils[0].tool;
-var color = couleurs[0]; // Couleur par défaut.
+var color = couleurs[0];
 var epaisseur = tailles[0];
 var lastLine;
 
@@ -88,6 +88,7 @@ var sizeDrawn = 0;
 function addContent(ctt) {
     if (sizeDrawn < content.length) {
         // Si on est revenu en arrière avec undo et qu'on a dessiné quelque chose.
+        // Dans ce cas suppression des éléments qui ne sont pas affichés.
         let toDelete = content.length - sizeDrawn;
         content.splice(-toDelete, toDelete);
     }
@@ -96,6 +97,7 @@ function addContent(ctt) {
     sizeDrawn++;
 }
 
+// Utilisation des informations pour créer une ligne.
 function buildNewLine(props) {
     return new Konva.Line({
         stroke: props.clr,
@@ -107,6 +109,7 @@ function buildNewLine(props) {
     });
 }
 
+// Un nouveau cercle.
 function buildNewCircle(props) {
     return new Konva.Circle({
         x: props.coords.x,
@@ -116,43 +119,45 @@ function buildNewCircle(props) {
     });
 }
 
+// Le serveur envoie une nouvelle ligne.
 function stocNewLine(props) {
     lastLine = buildNewLine(props);
     addContent(lastLine);
 }
-
+// Serveur -> nouveau point.
 function stocNewPoint(props) {
     lastLine.points(lastLine.points().concat([props.coords.x, props.coords.y]));
 }
-
+// Serveur -> ligne en cache.
 function stocCacheLine() {
     lastLine.cache();
 }
-
+// Serveur -> nouveau cercle.
 function stocNewCircle(props) {
     addContent(buildNewCircle(props));
 }
-
+// Serveur -> suppression du dessin.
 function stocDelete() {
     layer.destroyChildren();
     sizeDrawn = 0;
     content.splice(0, content.length);
 }
-
+// Serveur -> undo.
 function stocUndo() {
     if (sizeDrawn > 0) {
         sizeDrawn--;
         content[sizeDrawn].remove();
     }
 }
-
+// Serveur -> redo.
 function stocRedo() {
     if (sizeDrawn < content.length) {
         layer.add(content[sizeDrawn]);
         sizeDrawn++;
     }
 }
-
+// Serveur -> pile d'exécution.
+// Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
 socket.on("stoc stack", function(stack) {
     for(let elem of stack) {
         switch(elem.type) {
@@ -180,13 +185,13 @@ socket.on("stoc stack", function(stack) {
     }
 });
 
+/* --- Récéption des commandes du serveur temps réel. --- */
 socket.on("stoc draw line", stocNewLine);
 
 socket.on("stoc draw point", stocNewPoint);
 
 socket.on("stoc cache line", stocCacheLine);
 
-// Le client reçoit un cercle du serveur.
 socket.on("stoc draw cercle", stocNewCircle);
 
 socket.on("stoc delete", stocDelete);
@@ -203,7 +208,6 @@ function getPtrPosStage({x, y}) {
 // Début d'un nouveau trait.
 function newLine(e) {
     isPaint = true;
-    //const pos = stage.getPointerPosition();
     const pos = stage.getPointerPosition();
     var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out'};
     lastLine = buildNewLine(props);
@@ -215,7 +219,6 @@ function newLine(e) {
 function newPoint(e) {
     if (!isPaint)
         return;
-    //const pos = stage.getPointerPosition();
     const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
     var props = {coords: pos};
     var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
@@ -223,7 +226,7 @@ function newPoint(e) {
     lastLine.points(newPoints);
 }
 
-// Le clic est relaché.
+// Le clic est relaché, fin du tracé de la ligne et mise en cache.
 function endLine(e) {
     if (isPaint) {
         isPaint = false;
@@ -248,6 +251,7 @@ function resetBinds() {
     window.removeEventListener('mousemove', newPoint);
 }
 
+// Création des boutons pour les outils.
 for (let i = 0; i < ochild.length; i++) {
     ochild[i].addEventListener('click', function() {
         for (let j = 0; j < ochild.length; j++) {
@@ -260,6 +264,7 @@ for (let i = 0; i < ochild.length; i++) {
     });
 }
 
+// Création des boutons pour les couleurs.
 for (let i = 0; i < cchild.length; i++) {
     cchild[i].addEventListener('click', function() {
         for (let j = 0; j < cchild.length; j++)
@@ -269,6 +274,7 @@ for (let i = 0; i < cchild.length; i++) {
     });
 }
 
+// Création des boutons pour les tailles.
 for (let i = 0; i < tchild.length; i++) {
     tchild[i].addEventListener('click', function() {
         for (let j = 0; j < tchild.length; j++)
@@ -278,6 +284,7 @@ for (let i = 0; i < tchild.length; i++) {
     });
 }
 
+// Bouton de suppression.
 poubelleImg.addEventListener('click', function() {
     if (confirm("Êtes-vous sûr de vouloir supprimer votre beau dessin ?")) {
         layer.destroyChildren();
@@ -287,6 +294,7 @@ poubelleImg.addEventListener('click', function() {
     }
 });
 
+// Bouton undo.
 undoImg.addEventListener('click', function() {
     if (sizeDrawn > 0) {
         sizeDrawn--;
@@ -296,6 +304,7 @@ undoImg.addEventListener('click', function() {
     
 });
 
+// Bouton redo.
 redoImg.addEventListener('click', function() {
     if (sizeDrawn < content.length) {
         layer.add(content[sizeDrawn]);
