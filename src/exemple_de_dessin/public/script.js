@@ -124,11 +124,60 @@ function buildNewCircle(props) {
     });
 }
 
+// Compresse des données à la main en rassemblant les suites de 1
+// (très basique mais efficace pour compresser les résultats de remplissage).
+function compresseData(props, tab) {
+    for (let i = 0; i < tab.length; i++) {
+        if (tab[i] == 1) {
+            let bl = {id: i, l: 0};
+            while ((i < tab.length) && (tab[i] == 1)) {
+                i++;
+                bl.l++;
+            }
+            props.data.push(bl);
+        }
+    }
+}
+
+// Décompression des données compressées à la mano.
+// Donne un tableau de 1 et de 0 à partir des données compressées.
+// Le tableau obtenu contient pour chaque pixel de la zone de dessin 0 ou 1 pour savoir si le pixel fait partie du remplissage.
+function deCompresseData(props, tab) {
+    for (let elem of props.data) {
+        for (let i = 0; i < elem.l; i++) {
+            tab[elem.id + i] = 1;
+        }
+    }
+}
+
+// A partir d'un tableau, crée une image correspondant au résultat d'un remplissage.
+async function buildNewImage(props) {
+    let imdata = new ImageData(props.dim.width, props.dim.height);
+    imdata.data.fill(0);
+    for (let i = 0; i < props.data.length; i++) {
+        if (props.data[i] == 1) {
+            imdata.data[i * 4] = props.color.r;
+            imdata.data[i * 4 + 1] = props.color.g;
+            imdata.data[i * 4 + 2] = props.color.b;
+            imdata.data[i * 4 + 3] = props.color.a;
+        }
+    }
+    return createImageBitmap(imdata).then(function(im) {
+        let image = new Konva.Image({
+            image: im,
+            width: props.dim.width,
+            height: props.dim.height
+        });
+        return image;
+    });
+}
+
 // Le serveur envoie une nouvelle ligne.
 function stocNewLine(props) {
     lastLine = buildNewLine(props);
     addContent(lastLine);
 }
+
 // Serveur -> nouveau point.
 function stocNewPoint(props) {
     lastLine.points(lastLine.points().concat([props.coords.x, props.coords.y]));
@@ -142,7 +191,9 @@ function stocNewCircle(props) {
     addContent(buildNewCircle(props));
 }
 function stocNewFill(props) {
-    //...
+    let data = [props.dim.width * props.dim.heigth];
+    deCompresseData(props, data);
+    buildNewImage({dim: props.dim, color: props.color, data: data}).then((image) => {addContent(image);});
 }
 // Serveur -> suppression du dessin.
 function stocDelete() {
@@ -164,36 +215,54 @@ function stocRedo() {
         sizeDrawn++;
     }
 }
+
 // Serveur -> pile d'exécution.
 // Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
-socket.on("stoc stack", function(stack) {
-    for(let elem of stack) {
-        switch(elem.type) {
+// Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
+// on gère 'content' non pas comme une pile mais comme un tableau où les éléments sont ajoutés au bon index.
+// Pour le layer on précise l'ordre d'affichage des éléments avec 'setZindex'.
+socket.on("stoc stack", function(props) {
+    content = [props.pile.length];
+    for(let i = 0; i < props.pile.length; i++) {
+        switch(props.pile[i].type) {
             case 'newLine':
-                stocNewLine(elem.props);
-                break;
-            case 'newPoint':
-                stocNewPoint(elem.props);
-                break;
-            case 'cacheLine':
-                stocCacheLine();
-                break;
+                lastLine = buildNewLine(props.pile[i].props);
+                for (let elem of props.pile[i].props.points) {
+                    lastLine.points(lastLine.points().concat([elem.x, elem.y]));
+                }
+                if (i < props.lg) {
+                    layer.add(lastLine);
+                    lastLine.setZIndex(i);
+                }
+                lastLine.cache();
+                content[i] = lastLine;
+                continue;
             case 'newCircle':
-                stocNewCircle(elem.props);
-                break;
+                let cercle = buildNewCircle(props.pile[i].props);
+                if (i < props.lg) {
+                    layer.add(cercle);
+                    cercle.setZIndex(i);
+                }
+                content[i] = cercle;
+                continue;
             case 'newFill':
-                stocNewFill(elem.props);
-                break;
-            case 'undo':
-                stocUndo();
-                break;
-            case 'redo':
-                stocRedo();
-                break;
+                let data = [props.pile[i].props.dim.width * props.pile[i].props.dim.heigth];
+                deCompresseData(props.pile[i].props, data);
+                buildNewImage({dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data})
+                    .then((image) => {
+                        console.log(image);
+                        if (i < props.lg) {
+                            layer.add(image);
+                            image.setZIndex(i);
+                        }
+                        content[i] = image;
+                    });
+                continue;
             default:
-                break;
+                continue;
         }
     }
+    sizeDrawn = props.lg;
 });
 
 /* --- Récéption des commandes du serveur temps réel. --- */
@@ -222,7 +291,7 @@ function getPtrPosStage({x, y}) {
 function newLine(e) {
     isPaint = true;
     const pos = stage.getPointerPosition();
-    var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out'};
+    var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out', points: []};
     lastLine = buildNewLine(props);
     socket.emit("ctos draw line", props);
     addContent(lastLine);
@@ -301,8 +370,10 @@ function nouveauRemplissage() {
     let dim = {width: cwidth, height: cheigth};
     let imageData = layer.toCanvas().getContext('2d').getImageData(0,0,cwidth,cheigth);
     let data = imageData.data;
-    let imdata = new ImageData(cwidth, cheigth);
-    let dataDest = imdata.data;
+    // Comme chaque pixel du remplissage peut, soit être transparent, soit avoir la couleur du remplissage,
+    // on peut réduire les informations à un nombre par pixel : 0 (transparent) ou 1 (couleur).
+    let dataDest = [cwidth * cheigth];
+    dataDest.fill(0);
     var pos = stage.getPointerPosition();
     var posInt = {x: Math.trunc(pos.x), y: Math.trunc(pos.y)};
 
@@ -315,7 +386,8 @@ function nouveauRemplissage() {
     p.push(posInt);
     while (p.length > 0) {
         let pix = p.pop();
-        setColor(dataDest, getIndex(pix.x, pix.y, dim), colDest);
+        //setColor(dataDest, getIndex(pix.x, pix.y, dim), colDest);
+        dataDest[pix.y * dim.width + pix.x] = 1;
         setColor(data, getIndex(pix.x, pix.y, dim), colDest);
         if (cmpColor(data, getIndex(pix.x, pix.y - 1, dim), colCible))
             p.push({x: pix.x, y: pix.y - 1});
@@ -326,16 +398,10 @@ function nouveauRemplissage() {
         if (cmpColor(data, getIndex(pix.x + 1, pix.y, dim), colCible))
             p.push({x: pix.x + 1, y: pix.y});
     }
-    createImageBitmap(imdata).then(function(im) {
-        let image = new Konva.Image({
-            image: im,
-            width: cwidth,
-            height: cheigth
-        });
-        addContent(image);
-        //socket.emit("ctos draw fill", image); non
-    });
-    
+    buildNewImage({dim: dim, color: colDest, data: dataDest}).then((image) => {addContent(image);});
+    let props = {dim: dim, color: colDest, data: []};
+    compresseData(props, dataDest);
+    socket.emit("ctos draw fill", props);
 }
 
 // Fonction de changement de l'outil, lorsque l'utilisateur clique sur un des boutons.
