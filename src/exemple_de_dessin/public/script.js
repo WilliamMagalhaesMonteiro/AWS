@@ -24,10 +24,15 @@ function rondBinds() {
     stage.on('mousedown', nouveauRond);
 }
 
+function rempBinds() {
+    stage.on('mousedown', nouveauRemplissage);
+}
+
 // Tous les outils disponibles.
 const outils = [{tool: 'brush', file: "images/crayon.png", binds: defaultBinds},
     {tool: 'eraser', file: "images/gomme.png", binds: defaultBinds},
-    {tool: 'rond', file: "images/rond.png", binds: rondBinds}];
+    {tool: 'rond', file: "images/rond.png", binds: rondBinds},
+    {tool: 'fill', file: "images/remplissage.png", binds: rempBinds}];
 
 // Toutes les couleurs disponibles, avec un bouton pour chaque couleur.
 const couleurs = ["#ff0000", "#00f00f", "#0000ff", "#f6f600", "#ff9000", "#ff00ff", "#000000", "#ffffff"];
@@ -136,6 +141,9 @@ function stocCacheLine() {
 function stocNewCircle(props) {
     addContent(buildNewCircle(props));
 }
+function stocNewFill(props) {
+    //...
+}
 // Serveur -> suppression du dessin.
 function stocDelete() {
     layer.destroyChildren();
@@ -173,6 +181,9 @@ socket.on("stoc stack", function(stack) {
             case 'newCircle':
                 stocNewCircle(elem.props);
                 break;
+            case 'newFill':
+                stocNewFill(elem.props);
+                break;
             case 'undo':
                 stocUndo();
                 break;
@@ -193,6 +204,8 @@ socket.on("stoc draw point", stocNewPoint);
 socket.on("stoc cache line", stocCacheLine);
 
 socket.on("stoc draw cercle", stocNewCircle);
+
+socket.on("stoc draw fill", stocNewFill);
 
 socket.on("stoc delete", stocDelete);
 
@@ -242,6 +255,87 @@ function nouveauRond() {
     var rond = buildNewCircle(props);
     socket.emit("ctos draw cercle", props);
     addContent(rond);
+}
+
+/* Fonctions utilisées par le remplissage */
+// Calculs d'index dans le tableau.
+function getIndex(x, y, dim) {
+    if (x < 0)
+        x = 0;
+    if (y < 0)
+        y = 0;
+    if (x >= dim.width)
+        x = dim.width - 1;
+    if (y >= dim.height)
+        y = dim.height - 1;
+    return (y * dim.width + x) * 4;
+}
+
+// Modification de 4 cases dans le tableau pour changer la couleur d'un pixel.
+function setColor(data, index, color) {
+    data[index] = color.r;
+    data[index + 1] = color.g;
+    data[index + 2] = color.b;
+    data[index + 3] = color.a;
+}
+
+// Vérifie si le pixel indiqué est de la couleur indiqué.
+function cmpColor(data, index, color) {
+    if (data[index] != color.r)
+        return false;
+    if (data[index + 1] != color.g)
+        return false;
+    if (data[index + 2] != color.b)
+        return false;
+    if (data[index + 3] != color.a)
+        return false;
+    return true;
+}
+
+// Ici on récupère le tableau des pixels de la zone de dessin,
+// puis on applique un algorithme de remplissage qui compare la couleur des pixels.
+// On crée ensuite une nouvelle image qui est ajoutée au dessin.
+function nouveauRemplissage() {
+    let cwidth = stage.width();
+    let cheigth = stage.height();
+    let dim = {width: cwidth, height: cheigth};
+    let imageData = layer.toCanvas().getContext('2d').getImageData(0,0,cwidth,cheigth);
+    let data = imageData.data;
+    let imdata = new ImageData(cwidth, cheigth);
+    let dataDest = imdata.data;
+    var pos = stage.getPointerPosition();
+    var posInt = {x: Math.trunc(pos.x), y: Math.trunc(pos.y)};
+
+    let colDest = {r: parseInt(color.slice(1,3),16), g: parseInt(color.slice(3,5),16), b: parseInt(color.slice(5,7),16), a: 255};
+    let indexClic = getIndex(posInt.x, posInt.y, dim);
+    let colCible = {r: data[indexClic], g: data[indexClic + 1], b: data[indexClic + 2], a: data[indexClic + 3]};
+    if (colDest.r == colCible.r && colDest.g == colCible.g && colDest.b == colCible.b && colDest.a == colCible.a)
+        return;
+    var p = [];
+    p.push(posInt);
+    while (p.length > 0) {
+        let pix = p.pop();
+        setColor(dataDest, getIndex(pix.x, pix.y, dim), colDest);
+        setColor(data, getIndex(pix.x, pix.y, dim), colDest);
+        if (cmpColor(data, getIndex(pix.x, pix.y - 1, dim), colCible))
+            p.push({x: pix.x, y: pix.y - 1});
+        if (cmpColor(data, getIndex(pix.x, pix.y + 1, dim), colCible))
+            p.push({x: pix.x, y: pix.y + 1});
+        if (cmpColor(data, getIndex(pix.x - 1, pix.y, dim), colCible))
+            p.push({x: pix.x - 1, y: pix.y});
+        if (cmpColor(data, getIndex(pix.x + 1, pix.y, dim), colCible))
+            p.push({x: pix.x + 1, y: pix.y});
+    }
+    createImageBitmap(imdata).then(function(im) {
+        let image = new Konva.Image({
+            image: im,
+            width: cwidth,
+            height: cheigth
+        });
+        addContent(image);
+        //socket.emit("ctos draw fill", image); non
+    });
+    
 }
 
 // Fonction de changement de l'outil, lorsque l'utilisateur clique sur un des boutons.

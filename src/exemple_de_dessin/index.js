@@ -42,6 +42,11 @@ io.on("connection", function(socket) {
         stack.push({type: 'newPoint', props: props});
     });
 
+    socket.on("ctos draw fill", function(props) {
+        socket.broadcast.emit("stoc draw fill", props);
+        stack.push({type: 'newFill', props: props});
+    });
+
     // Suppression (poubelle).
     socket.on("ctos delete", function() {
         socket.broadcast.emit("stoc delete");
