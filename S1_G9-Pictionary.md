@@ -47,7 +47,7 @@ Nous avons décidé de faire un jeu du style Pictionary.
    	- Certains avaient des retards dans leur rendus respectifs (Ranking, Calcul sécurisé...)
 	- Ce qui a amené à peu d'avancées sur le code lui-même
 
-## Les avancées du code :
+## Les avancées du code :.
 
 
 - Test simple du Framework Konva pour afficher des formes basiques sur la page

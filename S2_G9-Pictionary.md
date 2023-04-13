@@ -13,17 +13,9 @@ Nous avons décidé de faire un jeu du style Pictionary.
 - Asmaa : Codeuse (Mise en forme)
 - Christian : Chercheur (Solutions d'hébergement)
 
-## Organisation
-- Discussions jeudi dernier, et sur discord.
+.....
 
-- Pour les codeurs, deux sous-rôle :
-	- **Partie design** : créer la page statique propre, en incluant les éléments nécessaires au jeu, et en les délimitant (zones pour le dessin, le chat, etc.).\
-	Réalisation d'un schéma représentant la page grossièrement, pour situer et organiser les différentes parties, afin de servir de base au designer.
-	- **Partie technique** : créer des maquettes pour le chat et la partie dessin, avec pour objectif de travailler sur la communication avec le serveur.
-
-- Pour le chercheur, s'intéresser à la partie mise en place (Node, et surtout hébergement).
-
-## Ce qu'on a appris
+## Ce qu'on a appris*
 
 ### Par le biais du codeur partie technique
 
@@ -37,7 +29,7 @@ Nous avons décidé de faire un jeu du style Pictionary.
 
 - Node.js
 
-	Nous utilisons Node.js car notre projet repose sur la communication en jeu (deviner ce que dessine l'autre) ainsi que sur le dessin lui-même.
+	Nous utilisons Node.js car notre projet repose sur la communication en jeu (deviner ce que dessine l'autre) ainsi que sur le dessin lui-même.k
 	Node.js est efficace et léger et peut gérer ce type d'application.
 	De plus, Node.js nous permet d'écrire du code Javascript à la fois côté client et côté serveur de l'application web.
 	Enfin, Node.js offre une approche évolutive pour la construction d'applications web.

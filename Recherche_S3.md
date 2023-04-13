@@ -27,3 +27,4 @@ Bien que notre application ne soit pas de grande envergure au niveau des donnée
 # Choix du Système d'hébergement
 
 Heroku : Supporte Node.Js, gratuit, suffisant pour notre application web.
+C'est une des solutions les plus simples à utiliser et à déjà été utilisée par le passé pour des projets d'étudiants.
