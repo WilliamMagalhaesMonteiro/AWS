@@ -13,6 +13,22 @@ const poubelleImg = document.getElementById("poubelle");
 const undoImg = document.getElementById("undo");
 const redoImg = document.getElementById("redo");
 
+var messages = document.getElementById('chat-messages');
+var form = document.getElementById('chat-form');
+var input = document.getElementById('chat-input');
+
+form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (input.value) {
+        socket.emit('chat message', input.value);
+        var item = document.createElement('li');
+        item.textContent = input.value;
+        messages.appendChild(item);
+        window.scrollTo(0, document.body.scrollHeight);
+        input.value = '';
+    }
+});
+
 // La gestion des événements de base, ceux du pinceau et de la gomme.
 function defaultBinds() {
     stage.on('mousedown', newLine);
@@ -215,14 +231,31 @@ function stocRedo() {
     }
 }
 
+function stocMessage(msg) {
+    var item = document.createElement('li');
+    item.textContent = msg;
+    messages.appendChild(item);
+    window.scrollTo(0, document.body.scrollHeight);
+}
+
 const socket = io();
+
+socket.on("stoc chat stack", function(stack) {
+    for(let msg of stack) {
+        stocMessage(msg);
+    }
+});
+
+socket.on('chat message', function (msg) {
+    stocMessage(msg);
+});
 
 // Serveur -> pile d'exécution.
 // Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
 // Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
 // on gère 'content' non pas comme une pile mais comme un tableau où les éléments sont ajoutés au bon index.
 // Pour le layer on précise l'ordre d'affichage des éléments avec 'setZindex'.
-socket.on("stoc stack", function(props) {
+socket.on("stoc draw stack", function(props) {
     content = [props.pile.length];
     for(let i = 0; i < props.pile.length; i++) {
         switch(props.pile[i].type) {
@@ -251,7 +284,6 @@ socket.on("stoc stack", function(props) {
                 deCompresseData(props.pile[i].props, data);
                 buildNewImage({dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data})
                     .then((image) => {
-                        console.log(image);
                         if (i < props.lg) {
                             layer.add(image);
                             image.setZIndex(i);

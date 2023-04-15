@@ -75,7 +75,12 @@
 			</div>
 		</div>
 		<div id="chat-container">
-			<form id="chat-form">
+			<ul id="chat-messages"></ul>
+    		<form id="chat-form" action="">
+        		<input id="chat-input" type="text" autocomplete="off" placeholder="Type your guess here..." maxlength="100" data-translate="placeholder"/>
+				<button>Envoyer</button>
+    		</form>
+			<!--form id="chat-form">
 				<div id="chat-contents-flex-box">
 					<div id="chat-body">
 						<p style="color: black"><b>player 1: </b><span></span></p>
@@ -87,10 +92,10 @@
 						<p style="color: black"><b> </b><span></span></p>
 					</div>
 					<div id="chat-footer">
-						<input type="text" autocomplete="off" placeholder="Type your guess here..." maxlength="100" data-translate="placeholder">
+						<input id="chat-input" type="text" autocomplete="off" placeholder="Type your guess here..." maxlength="100" data-translate="placeholder">
 					</div>
 				</div>
-			</form>
+			</form-->
 		</div>
 	</div>
 

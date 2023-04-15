@@ -22,20 +22,41 @@ body {
     display: flex;
 }
 
-#chat-contents-flex-box {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    height: 100%;
-}
-
-#chat-footer {
-    /* ajoute de l'espace après le tag */
-    margin-bottom: 15px; 
+#chat-container {
+    margin-left: auto;
+    width: 20%;
+    border: 0.1rem solid lavender;
+    background-color: rgb(207, 207, 207);
+    position: relative;
 }
 
 #chat-form {
-    height: 100%;
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 2rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+    float: bottom;
+
+}
+
+#chat-messages {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#chat-messages li {
+    padding: 0.5rem 1rem;
+}
+
+#chat-messages li:nth-child(2n) {
+    background-color: rgba(218, 218, 218, 0.842);
 }
 
 #word-to-find-box {
@@ -57,6 +78,11 @@ body {
     font-size: 2rem;
 }
 
+#middle-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 #drawing-container {
     border: 2px solid #000000;
     height: 600px;
@@ -64,30 +90,14 @@ body {
     background-color: #f5f5f5;
 }
 
-#chat-container {
-    margin-left: auto;
-    width: 20%;
-    border: 0.1rem solid lavender;
-    background-color: rgb(187, 187, 187);
-}
-
 #users-container {
     margin-left: 5px;
-    margin-right: 100px;
+    /*margin-right: 100px;*/
     width: 20%;
     border: 0.1rem solid green;
     background-color: rgb(187, 187, 187);
     
 }
-
-#chat-body p:nth-child(2n) {
-    background-color: rgba(218, 218, 218, 0.842);
-}
-
-#chat-body p {
-    padding-left: 10px;
-}
-
 
 .player-rank {
     font-weight: bold;

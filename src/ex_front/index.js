@@ -8,14 +8,16 @@ const port = 3000;
 
 app.use(express.static(__dirname + '/public'));
 
-var stack = [];
+var draw_stack = [];
 var effSize = 0;
 let lastLine;
 
+var chat_stack = [];
+
 function clearPrev() {
-    if (effSize < stack.length) {
-        let toDelete = stack.length - effSize;
-        stack.splice(-toDelete, toDelete);
+    if (effSize < draw_stack.length) {
+        let toDelete = draw_stack.length - effSize;
+        draw_stack.splice(-toDelete, toDelete);
     }
 }
 
@@ -23,7 +25,8 @@ function clearPrev() {
 io.on("connection", function(socket) {
 
     // Envoi de toute le pile d'éxécution pour que le nouveau client récupère l'état du dessin.
-    socket.emit("stoc stack", {pile: stack, lg: effSize});
+    socket.emit("stoc draw stack", {pile: draw_stack, lg: effSize});
+    socket.emit("stoc chat stack", chat_stack);
 
     // Transmission du dessin en temps réel :
     // Nouveau cercle
@@ -31,16 +34,16 @@ io.on("connection", function(socket) {
         // nouvelle forme envoyée à tous les autres clients
         socket.broadcast.emit("stoc draw cercle", props);
         clearPrev();
-        stack.push({type: 'newCircle', props: props});
-        effSize = stack.length;
+        draw_stack.push({type: 'newCircle', props: props});
+        effSize = draw_stack.length;
     });
 
     // Nouvelle ligne
     socket.on("ctos draw line", function(props) {
         socket.broadcast.emit("stoc draw line", props);
         clearPrev();
-        stack.push({type: 'newLine', props: props});
-        effSize = stack.length;
+        draw_stack.push({type: 'newLine', props: props});
+        effSize = draw_stack.length;
         lastLine = props;
     });
 
@@ -54,20 +57,22 @@ io.on("connection", function(socket) {
     // Nouveau point d'une ligne.
     socket.on("ctos draw point", function(props) {
         socket.broadcast.emit("stoc draw point", props);
-        lastLine.points.push(props.coords);
+        if (lastLine) {
+            lastLine.points.push(props.coords);
+        }
     });
 
     socket.on("ctos draw fill", function(props) {
         socket.broadcast.emit("stoc draw fill", props);
         clearPrev();
-        stack.push({type: 'newFill', props: props});
-        effSize = stack.length;
+        draw_stack.push({type: 'newFill', props: props});
+        effSize = draw_stack.length;
     });
 
     // Suppression (poubelle).
     socket.on("ctos delete", function() {
         socket.broadcast.emit("stoc delete");
-        stack.splice(0, stack.length);
+        draw_stack.splice(0, draw_stack.length);
     });
 
     // undo
@@ -80,8 +85,14 @@ io.on("connection", function(socket) {
     // redo
     socket.on("ctos redo", function() {
         socket.broadcast.emit("stoc redo");
-        if (effSize < stack.length)
+        if (effSize < draw_stack.length)
             effSize++;
+    });
+
+    // Message dans le chat !
+    socket.on('chat message', (msg) => {
+        socket.broadcast.emit('chat message', msg);
+        chat_stack.push(msg);
     });
 });
 
