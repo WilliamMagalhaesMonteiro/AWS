@@ -7,25 +7,13 @@
 <head>
 	<title>Pictionary</title>
 	<link rel="stylesheet" href="./style.css" />
-	<script src="https://unpkg.com/konva@8.3.14/konva.min.js"></script>
 	<script src="./script.js" defer></script>
+	<script src="/konva.min.js"></script>
+  	<script src="/socket.io.min.js"></script>
 </head>
 
 <body>
 	<h1>Pictionary 2</h1>
-	Tool:
-	<select id="tool">
-		<option value="brush">Brush</option>
-		<option value="eraser">Eraser</option>
-	</select>
-
-	<div class="color-selectors">
-		<button id="choose-blue-button" class="button-colored blue"></button>
-		<button id="choose-green-button" class="button-colored green"></button>
-		<button id="choose-red-button" class="button-colored red"></button>
-		<button id="choose-yellow-button" class="button-colored yellow"></button>
-
-	</div>
 	
 	<div id="word-to-find-box">
 		<p id="word-to-find">_ _ _ _ _</p>
@@ -77,6 +65,14 @@
 		</div>
 		<div id="middle-container">
 			<div id="drawing-container"></div>
+			<div id="options-dessin">
+				<div class="option-group" id="tailles"></div>
+				<div class="option-group" id="tools"></div>
+				<div class="option-group" id="colors"></div>
+				<img id="undo" src="images/undo.png">
+				<img id="redo" src="images/redo.png">
+				<img id="poubelle" src="images/poubelle.png">
+			</div>
 		</div>
 		<div id="chat-container">
 			<form id="chat-form">
@@ -94,7 +90,6 @@
 						<input type="text" autocomplete="off" placeholder="Type your guess here..." maxlength="100" data-translate="placeholder">
 					</div>
 				</div>
-				
 			</form>
 		</div>
 	</div>
