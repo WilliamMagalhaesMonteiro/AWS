@@ -24,7 +24,7 @@ Pour lancer démarrer le SGBD:
 Ensuite on va créer un utilisateur:
 
 `sudo mysql -u root -p` (mdp : vrai mot de passe sudo)
-`CREATE USER 'le_patron'@'localhost' IDENTIFIED WITH mysql_native_password BY motdepassebidon;`
+`CREATE USER 'le_patron'@'localhost' IDENTIFIED WITH mysql_native_password BY 'motdepassebidon';`
 `GRANT ALL ON MOTS.* TO le_patron@localhost;`
 
 
