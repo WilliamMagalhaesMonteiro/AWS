@@ -238,6 +238,8 @@ function stocMessage(msg) {
     window.scrollTo(0, document.body.scrollHeight);
 }
 
+const username = document.cookie.replace("name=", "");
+
 const socket = io();
 
 socket.on("stoc chat stack", function(stack) {
@@ -342,7 +344,7 @@ function newPoint(e) {
 }
 
 // Le clic est relaché, fin du tracé de la ligne et mise en cache.
-function endLine(e) {
+function endLine() {
     if (isPaint) {
         isPaint = false;
         lastLine.cache();

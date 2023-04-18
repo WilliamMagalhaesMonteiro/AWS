@@ -46,6 +46,7 @@ app.post('/auth', function(request, response) {
 			if (results.length > 0) {
 				request.session.loggedin = true;
 				request.session.username = username;
+                console.log(request.session.id);
 				return response.redirect('/pictionary');
 			} else {
 				response.send('Incorrect Username and/or Password!');
@@ -71,6 +72,7 @@ app.use(express.static(path.join(__dirname, 'pictionary')));
 
 app.get('/pictionary', pictionaryGetVerifAuth, function(request, response) {
     response.sendFile(path.join(__dirname, 'pictionary', 'index.html'));
+    response.cookie('name', request.session.username, { secure: true });
 });
 
 const port_socket = 3000;
@@ -97,6 +99,8 @@ const io = new Server(server);
 // Nouvelle connexion.
 io.on("connection", function(socket) {
 
+    console.log("new connexion : " + socket.handshake.headers.cookie);
+
     // Envoi de toute le pile d'éxécution pour que le nouveau client récupère l'état du dessin.
     socket.emit("stoc draw stack", {pile: draw_stack, lg: effSize});
     socket.emit("stoc chat stack", chat_stack);
@@ -104,6 +108,7 @@ io.on("connection", function(socket) {
     // Transmission du dessin en temps réel :
     // Nouveau cercle
     socket.on("ctos draw cercle", function(props){
+        console.log(socket.client.id);
         // nouvelle forme envoyée à tous les autres clients
         socket.broadcast.emit("stoc draw cercle", props);
         clearPrev();
