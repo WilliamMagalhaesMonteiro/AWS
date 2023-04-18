@@ -1,0 +1,167 @@
+h1 {
+    text-align: center;
+    color: rgb(3, 3, 3);
+    font-size: 200%;
+
+}
+
+body {
+    background-image: url("https://i.pinimg.com/originals/21/61/1b/21611b38a1a7f75b483162fe7386c326.jpg");
+    background-size: cover;
+}
+
+#bienvenue{
+    color: red  ;
+    text-align: center;
+    font-size: 150%;
+    border: 1rem solid;
+}
+
+#big-container {
+    width: 100%;
+    display: flex;
+}
+
+#chat-container {
+    margin-left: auto;
+    width: 20%;
+    border: 0.1rem solid lavender;
+    background-color: rgb(207, 207, 207);
+    position: relative;
+}
+
+#chat-form {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 0.25rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 2rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+    float: bottom;
+
+}
+
+#chat-messages {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+}
+
+#chat-messages li {
+    padding: 0.5rem 1rem;
+}
+
+#chat-messages li:nth-child(2n) {
+    background-color: rgba(218, 218, 218, 0.842);
+}
+
+#word-to-find-box {
+    /* align center */
+    margin-left: auto;
+    margin-right: auto;
+    /* -------------- */
+    text-align: center;
+    background-color: rgba(199, 196, 190, 0.199);
+
+    /* ajouter de l'espace */
+    padding-top: 1px;
+    padding-bottom: 1px;
+    /* TODO: transformer en grid */
+    width: 36%;
+}
+
+#word-to-find {
+    font-size: 2rem;
+}
+
+#middle-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#drawing-container {
+    border: 2px solid #000000;
+    height: 600px;
+    width: 900px;
+    background-color: #f5f5f5;
+}
+
+#users-container {
+    margin-left: 5px;
+    /*margin-right: 100px;*/
+    width: 20%;
+    border: 0.1rem solid green;
+    background-color: rgb(187, 187, 187);
+    
+}
+
+.player-rank {
+    font-weight: bold;
+    font-size: 2rem;
+}
+
+.player-container {
+    display: flex;
+    justify-content: space-between;
+    background-color: rgb(202, 243, 254);
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.align-vertical {  
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.full-height {
+    height: 100%;
+}
+
+.no-margin {
+    margin:0;
+}
+
+.player-container {
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+}
+
+#options-dessin {
+    display: flex;
+    flex-direction: row;
+}
+
+#options-dessin #tailles div {
+    align-self: center;
+    margin-left: 2px;
+    margin-top: 2px;
+    background-color: #000000;
+    border: 2px solid;
+    border-color: #000000;
+    border-radius: 100%;
+}
+
+#options-dessin img, .option-group div {
+    margin-left: 2px;
+    margin-top: 4px;
+    border: 2px solid;
+    height: 40px;
+    width: 40px;
+}
+
+#options-dessin img {
+    border-color: #000000;
+    image-rendering: pixelated;
+}
+
+#options-dessin .option-group {
+    display: flex;
+    flex-direction: row;
+}
