@@ -13,9 +13,13 @@ const poubelleImg = document.getElementById("poubelle");
 const undoImg = document.getElementById("undo");
 const redoImg = document.getElementById("redo");
 
+const playersList = document.getElementById("players-list");
+
+const wordToFind = document.getElementById("word-to-find");
+
 var messages = document.getElementById('chat-messages');
 var form = document.getElementById('chat-form');
-var input = document.getElementById('chat-input');
+const input = document.getElementById('chat-input');
 
 form.addEventListener('submit', function (e) {
     e.preventDefault();
@@ -30,7 +34,7 @@ form.addEventListener('submit', function (e) {
 });
 
 // La gestion des événements de base, ceux du pinceau et de la gomme.
-function defaultBinds() {
+function traitsBinds() {
     stage.on('mousedown', newLine);
     window.addEventListener('mousemove', newPoint);
     window.addEventListener('mouseup', endLine);
@@ -46,8 +50,8 @@ function rempBinds() {
 }
 
 // Tous les outils disponibles.
-const outils = [{tool: 'brush', file: "images/crayon.png", binds: defaultBinds},
-    {tool: 'eraser', file: "images/gomme.png", binds: defaultBinds},
+const outils = [{tool: 'brush', file: "images/crayon.png", binds: traitsBinds},
+    {tool: 'eraser', file: "images/gomme.png", binds: traitsBinds},
     {tool: 'rond', file: "images/rond.png", binds: rondBinds},
     {tool: 'fill', file: "images/remplissage.png", binds: rempBinds}];
 
@@ -94,8 +98,14 @@ var layer = new Konva.Layer();
 layer.listening(false);
 stage.add(layer);
 
+const borderYouColor = "#9060fe";
+const borderNotYouColor = "transparent";
+const bgDessinateurColor = "#ffbfcf";
+const bgDevineurColor = "#caf3fe";
+
 var isPaint = false;
-var outil = outils[0].tool;
+var outil_id = 0;
+
 var color = couleurs[0];
 var epaisseur = tailles[0];
 var lastLine;
@@ -103,6 +113,10 @@ var lastLine;
 // Gestion de l'historique pour undo et redo.
 var content = [];
 var sizeDrawn = 0;
+
+// role
+var roleDessinateur = false;
+var userDessinateur = "";
 
 // Ajout d'un nouvel élément au Layer, avec gestion de l'historique.
 function addContent(ctt) {
@@ -240,7 +254,41 @@ function stocMessage(msg) {
 
 const username = document.cookie.replace("name=", "");
 
-const socket = io();
+const socket = io("", {query: {username: username}});
+
+socket.on("stoc user list", function(list) {
+    playersList.innerHTML = ""; //nettoyage
+    for (let user of list) {
+        let playerContainer = document.createElement("div");
+        playerContainer.setAttribute("class", "player-container");
+        playerContainer.setAttribute("id", user);
+        playerContainer.style.borderColor = (user === username) ? borderYouColor : borderNotYouColor;
+        playerContainer.style.backgroundColor = (userDessinateur === user) ? bgDessinateurColor : bgDevineurColor;
+
+        let playerRank = document.createElement("p");
+        playerRank.setAttribute("class", "player-rank align-vertical");
+        playerRank.textContent = "#1";
+        playerContainer.appendChild(playerRank);
+
+        let playerName = document.createElement("div");
+        playerName.setAttribute("class", "player-name align-vertical");
+        playerContainer.appendChild(playerName);
+
+        const pseudoB = document.createElement("b");
+        const userValue = user + (user === username ? " (You)" : "");
+        const texteGras = document.createTextNode(userValue);
+        pseudoB.appendChild(texteGras);
+
+        let pseudo = document.createElement("div");
+        pseudo.appendChild(pseudoB);
+        let score = document.createElement("div");
+        score.textContent = 0 + " points";
+        playerName.appendChild(pseudo);
+        playerName.appendChild(score);
+
+        playersList.appendChild(playerContainer);
+    }
+});
 
 socket.on("stoc chat stack", function(stack) {
     for(let msg of stack) {
@@ -317,6 +365,25 @@ socket.on("stoc undo", stocUndo);
 
 socket.on("stoc redo", stocRedo);
 
+socket.on("stoc dessinateur", function(infos) {
+    resetBinds();
+    userDessinateur = infos.dessinateur;
+    if (userDessinateur === username || infos.dessinateur == "") {
+        // dessinateur
+        wordToFind.textContent = infos.mot_clair;
+        outils[outil_id].binds();
+        roleDessinateur = true;
+    } else {
+        // devineur
+        wordToFind.textContent = infos.mot_cache;
+        roleDessinateur = false;
+    }
+    for (let elem of playersList.children) {
+        elem.style.backgroundColor = (elem.getAttribute("id") === infos.dessinateur)
+        ? bgDessinateurColor : bgDevineurColor;
+    }
+});
+
 // Calcule la position du curseur relativement à la zone de dessin à partir de la position absolue sur la fenêtre.
 function getPtrPosStage({x, y}) {
     return {x: x - container.offsetLeft, y: y - container.offsetTop};
@@ -324,9 +391,11 @@ function getPtrPosStage({x, y}) {
 
 // Début d'un nouveau trait.
 function newLine(e) {
+    if (!roleDessinateur)
+        return;
     isPaint = true;
     const pos = stage.getPointerPosition();
-    var props = {coords: pos, width: epaisseur, clr: color, mode: (outil === 'brush') ? 'source-over' : 'destination-out', points: []};
+    var props = {coords: pos, width: epaisseur, clr: color, mode: (outils[outil_id].tool === 'brush') ? 'source-over' : 'destination-out', points: []};
     lastLine = buildNewLine(props);
     socket.emit("ctos draw line", props);
     addContent(lastLine);
@@ -334,7 +403,7 @@ function newLine(e) {
 
 // Nouveau segment sur le trait à chaque déplacement de souris.
 function newPoint(e) {
-    if (!isPaint)
+    if (!isPaint || !roleDessinateur)
         return;
     const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
     var props = {coords: pos};
@@ -345,6 +414,8 @@ function newPoint(e) {
 
 // Le clic est relaché, fin du tracé de la ligne et mise en cache.
 function endLine() {
+    if (!roleDessinateur)
+        return;
     if (isPaint) {
         isPaint = false;
         lastLine.cache();
@@ -354,6 +425,8 @@ function endLine() {
 
 // Un disque (rond) est tracé sur un clic
 function nouveauRond() {
+    if (!roleDessinateur)
+        return;
     var pos = stage.getPointerPosition();
     var props = {coords:pos, radius: epaisseur * 2, fill: color};
     var rond = buildNewCircle(props);
@@ -385,6 +458,8 @@ function setColor(data, index, color) {
 
 // Vérifie si le pixel indiqué est de la couleur indiqué.
 function cmpColor(data, index, color) {
+    if (data[index + 3] != 255 && data[index + 3] != 0)
+        return true; //on remplit toujours les pixels semi-transparents
     if (data[index] != color.r)
         return false;
     if (data[index + 1] != color.g)
@@ -400,6 +475,8 @@ function cmpColor(data, index, color) {
 // puis on applique un algorithme de remplissage qui compare la couleur des pixels.
 // On crée ensuite une nouvelle image qui est ajoutée au dessin.
 function nouveauRemplissage() {
+    if (!roleDessinateur)
+        return;
     let cwidth = stage.width();
     let cheigth = stage.height();
     let dim = {width: cwidth, height: cheigth};
@@ -453,7 +530,7 @@ for (let i = 0; i < ochild.length; i++) {
             ochild[j].style.borderColor = 'black';
         }
         ochild[i].style.borderColor = 'red';
-        outil = outils[i].tool;
+        outil_id = i;
         resetBinds();
         outils[i].binds();
     });
@@ -481,6 +558,8 @@ for (let i = 0; i < tchild.length; i++) {
 
 // Bouton de suppression.
 poubelleImg.addEventListener('click', function() {
+    if (!roleDessinateur)
+        return;
     if (confirm("Êtes-vous sûr de vouloir supprimer votre beau dessin ?")) {
         layer.destroyChildren();
         sizeDrawn = 0;
@@ -491,6 +570,8 @@ poubelleImg.addEventListener('click', function() {
 
 // Bouton undo.
 undoImg.addEventListener('click', function() {
+    if (!roleDessinateur)
+        return;
     if (sizeDrawn > 0) {
         sizeDrawn--;
         content[sizeDrawn].remove();
@@ -501,6 +582,8 @@ undoImg.addEventListener('click', function() {
 
 // Bouton redo.
 redoImg.addEventListener('click', function() {
+    if (!roleDessinateur)
+        return;
     if (sizeDrawn < content.length) {
         layer.add(content[sizeDrawn]);
         sizeDrawn++;
@@ -515,5 +598,3 @@ ochild[0].style.borderColor = 'red';
 cchild[0].style.borderColor = 'red';
 // Epaisseur par défaut
 tchild[0].style.borderColor = 'red';
-
-defaultBinds();
