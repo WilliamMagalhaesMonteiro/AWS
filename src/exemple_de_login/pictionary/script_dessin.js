@@ -253,6 +253,7 @@ function stocMessage(msg) {
 }
 
 const username = document.cookie.replace("name=", "");
+console.log(document.cookie);
 
 const socket = io("", {query: {username: username}});
 
@@ -558,6 +559,7 @@ for (let i = 0; i < tchild.length; i++) {
 
 // Bouton de suppression.
 poubelleImg.addEventListener('click', function() {
+    console.log(document.cookie);
     if (!roleDessinateur)
         return;
     if (confirm("Êtes-vous sûr de vouloir supprimer votre beau dessin ?")) {

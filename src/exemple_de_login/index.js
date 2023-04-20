@@ -55,6 +55,7 @@ app.post('/auth', function(request, response) {
 			if (results.length > 0) {
 				request.session.loggedin = true;
 				request.session.username = username;
+                response.cookie('name', request.session.username);
 				return response.redirect('/pictionary');
 			} else {
 				response.send('Incorrect Username and/or Password!');
@@ -81,7 +82,6 @@ app.use(express.static(path.join(__dirname, 'pictionary')));
 app.get('/pictionary', pictionaryGetVerifAuth, function(request, response) {
     response.sendFile(path.join(__dirname, 'pictionary', 'index.html'));
     // Le cookie est modifié pour ajouter le nom d'uilisteur, récupéré dans le script du pictionary côté client par la suite.
-    response.cookie('name', request.session.username, { secure: true });
 });
 
 const port_socket = 3000;
