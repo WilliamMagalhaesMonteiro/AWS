@@ -2,6 +2,7 @@ const mysql = require('mysql');
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const pug = require('pug');
 
 const connection = mysql.createConnection({
 	host     : 'localhost',
@@ -25,6 +26,8 @@ connection.query(
 
 const app = express();
 
+app.set("view engine", "pug");
+
 app.use(session({
 	secret: 'secret',
 	resave: true,
@@ -33,54 +36,53 @@ app.use(session({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'login')));
+app.use(express.static(path.join(__dirname, 'static')));
 
-app.get('/', function(request, response) {
-	response.redirect('/auth');
+app.get('/', function(req, res) {
+    res.redirect('/auth');
 });
 
-app.get('/auth', function(request, response) {
-	response.sendFile(path.join(__dirname, 'login/index.html'));
+app.get('/auth', function (req, res) {
+    // Rendu de la page d'authentification
+    res.render('login');
 });
 
 // Lorsque l'utilisateur clique sur 'Login'
 // -> http://localhost:3000/auth
-app.post('/auth', function(request, response) {
-	let username = request.body.username;
-	let password = request.body.password;
+app.post('/auth', function(req, res) {
+	let username = req.body.username;
+	let password = req.body.password;
 	if (username && password) {
 		// Vraiment la base de la base avec les failles qui vont avec
 		connection.query("select * from comptes where username = ? and password = ?;", [username, password], function(error, results) {
 			if (error) throw error;
 			if (results.length > 0) {
-				request.session.loggedin = true;
-				request.session.username = username;
-                response.cookie('name', request.session.username);
-				return response.redirect('/pictionary');
+				req.session.loggedin = true;
+				req.session.username = username;
+                res.cookie('name', req.session.username);
+				return res.redirect('/pictionary');
 			} else {
-				response.send('Incorrect Username and/or Password!');
+                // Rendu de la page d'authentification avec des trucs à afficher en plus !
+                res.render('login', {message: "Nom d'utilisateur ou mot de passe incorrect.", username: username});
 			}
-			response.end();
+			res.end();
 		});
-	} else {
-		response.send('Please enter Username and Password!');
-		response.end();
 	}
 });
 
-function pictionaryGetVerifAuth(request, response, next) {
-    if (request.session.loggedin) {
+function pictionaryGetVerifAuth(req, res, next) {
+    if (req.session.loggedin) {
 		return next();
 	} else {
-		response.send('Please login to view this page!');
+		res.send('Please login to view this page!');
 	}
-	response.end();
+	res.end();
 }
 
 app.use(express.static(path.join(__dirname, 'pictionary')));
 
-app.get('/pictionary', pictionaryGetVerifAuth, function(request, response) {
-    response.sendFile(path.join(__dirname, 'pictionary', 'index.html'));
+app.get('/pictionary', pictionaryGetVerifAuth, function(req, res) {
+    res.sendFile(path.join(__dirname, 'pictionary', 'index.html'));
     // Le cookie est modifié pour ajouter le nom d'uilisteur, récupéré dans le script du pictionary côté client par la suite.
 });
 

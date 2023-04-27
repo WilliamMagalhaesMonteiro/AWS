@@ -1,0 +1,15 @@
+// pug permet de générer la page html différemment selon le contexte.
+// Ici si le serveur a renvoyé un message d'erreur un élément est ajouté en bas de la page...
+html
+  head
+    title Login
+    link(rel='stylesheet', href='/style.css')
+  body
+    div(class='login')
+      h1 Se connecter
+      form(method='POST', action='/auth', id='form')
+        input(type='text', name='username', placeholder='Username', value=username, required)
+        input(type='password', name='password', placeholder='Password', required)
+        input(type='submit', value='Valider')
+    if message
+      p.error= message
