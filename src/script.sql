@@ -14,6 +14,8 @@ create table mots (
     primary key (`id`)
 );
 
+insert into comptes (`username`, `password`) values ('a', 'a');
+insert into comptes (`username`, `password`) values ('b', 'b');
 insert into comptes (`username`, `password`) values ('william', 'leBOL');
 insert into comptes (`username`, `password`) values ('hugo', 'squidGame');
 insert into comptes (`username`, `password`) values ('asmaa', 'secure_password');

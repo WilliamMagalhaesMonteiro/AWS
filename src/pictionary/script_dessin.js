@@ -24,9 +24,10 @@ const input = document.getElementById('chat-input');
 form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
-        socket.emit('chat message', input.value);
+        var texte = input.value;
+        socket.emit('chat message', { texte, username });
         var item = document.createElement('li');
-        item.textContent = input.value;
+        item.textContent = username + ": " + input.value;
         messages.appendChild(item);
         window.scrollTo(0, document.body.scrollHeight);
         input.value = '';
@@ -50,10 +51,10 @@ function rempBinds() {
 }
 
 // Tous les outils disponibles.
-const outils = [{tool: 'brush', file: "images/crayon.png", binds: traitsBinds},
-    {tool: 'eraser', file: "images/gomme.png", binds: traitsBinds},
-    {tool: 'rond', file: "images/rond.png", binds: rondBinds},
-    {tool: 'fill', file: "images/remplissage.png", binds: rempBinds}];
+const outils = [{ tool: 'brush', file: "images/crayon.png", binds: traitsBinds },
+{ tool: 'eraser', file: "images/gomme.png", binds: traitsBinds },
+{ tool: 'rond', file: "images/rond.png", binds: rondBinds },
+{ tool: 'fill', file: "images/remplissage.png", binds: rempBinds }];
 
 // Toutes les couleurs disponibles, avec un bouton pour chaque couleur.
 const couleurs = ["#ff0000", "#00f00f", "#0000ff", "#f6f600", "#ff9000", "#ff00ff", "#000000", "#ffffff"];
@@ -158,7 +159,7 @@ function buildNewCircle(props) {
 function compresseData(props, tab) {
     for (let i = 0; i < tab.length; i++) {
         if (tab[i] == 1) {
-            let bl = {id: i, l: 0};
+            let bl = { id: i, l: 0 };
             while ((i < tab.length) && (tab[i] == 1)) {
                 i++;
                 bl.l++;
@@ -191,7 +192,7 @@ async function buildNewImage(props) {
             imdata.data[i * 4 + 3] = props.color.a;
         }
     }
-    return createImageBitmap(imdata).then(function(im) {
+    return createImageBitmap(imdata).then(function (im) {
         let image = new Konva.Image({
             image: im,
             width: props.dim.width,
@@ -222,7 +223,7 @@ function stocNewCircle(props) {
 function stocNewFill(props) {
     let data = [props.dim.width * props.dim.heigth];
     deCompresseData(props, data);
-    buildNewImage({dim: props.dim, color: props.color, data: data}).then((image) => {addContent(image);});
+    buildNewImage({ dim: props.dim, color: props.color, data: data }).then((image) => { addContent(image); });
 }
 // Serveur -> suppression du dessin.
 function stocDelete() {
@@ -247,17 +248,29 @@ function stocRedo() {
 
 function stocMessage(msg) {
     var item = document.createElement('li');
-    item.textContent = msg;
+    let text = msg.text;
+    let user = msg.user;
+    let bool = msg.bool;
+
+
+    if (bool == 1) {
+        item.style.color = "green";
+        item.textContent = text;
+    }
+    else {
+        item.textContent = user + ": " + text;
+    }
     messages.appendChild(item);
+
     window.scrollTo(0, document.body.scrollHeight);
 }
 
 const username = document.cookie.replace("name=", "");
 console.log(document.cookie);
 
-const socket = io("", {query: {username: username}});
+const socket = io("", { query: { username: username } });
 
-socket.on("stoc user list", function(list) {
+socket.on("stoc user list", function (list) {
     playersList.innerHTML = ""; //nettoyage
     for (let user of list) {
         let playerContainer = document.createElement("div");
@@ -291,8 +304,8 @@ socket.on("stoc user list", function(list) {
     }
 });
 
-socket.on("stoc chat stack", function(stack) {
-    for(let msg of stack) {
+socket.on("stoc chat stack", function (stack) {
+    for (let msg of stack) {
         stocMessage(msg);
     }
 });
@@ -306,10 +319,10 @@ socket.on('chat message', function (msg) {
 // Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
 // on gère 'content' non pas comme une pile mais comme un tableau où les éléments sont ajoutés au bon index.
 // Pour le layer on précise l'ordre d'affichage des éléments avec 'setZindex'.
-socket.on("stoc draw stack", function(props) {
+socket.on("stoc draw stack", function (props) {
     content = [props.pile.length];
-    for(let i = 0; i < props.pile.length; i++) {
-        switch(props.pile[i].type) {
+    for (let i = 0; i < props.pile.length; i++) {
+        switch (props.pile[i].type) {
             case 'newLine':
                 lastLine = buildNewLine(props.pile[i].props);
                 for (let elem of props.pile[i].props.points) {
@@ -333,7 +346,7 @@ socket.on("stoc draw stack", function(props) {
             case 'newFill':
                 let data = [props.pile[i].props.dim.width * props.pile[i].props.dim.heigth];
                 deCompresseData(props.pile[i].props, data);
-                buildNewImage({dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data})
+                buildNewImage({ dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data })
                     .then((image) => {
                         if (i < props.lg) {
                             layer.add(image);
@@ -366,7 +379,7 @@ socket.on("stoc undo", stocUndo);
 
 socket.on("stoc redo", stocRedo);
 
-socket.on("stoc dessinateur", function(infos) {
+socket.on("stoc dessinateur", function (infos) {
     resetBinds();
     userDessinateur = infos.dessinateur;
     if (userDessinateur === username || infos.dessinateur == "") {
@@ -381,13 +394,13 @@ socket.on("stoc dessinateur", function(infos) {
     }
     for (let elem of playersList.children) {
         elem.style.backgroundColor = (elem.getAttribute("id") === infos.dessinateur)
-        ? bgDessinateurColor : bgDevineurColor;
+            ? bgDessinateurColor : bgDevineurColor;
     }
 });
 
 // Calcule la position du curseur relativement à la zone de dessin à partir de la position absolue sur la fenêtre.
-function getPtrPosStage({x, y}) {
-    return {x: x - container.offsetLeft, y: y - container.offsetTop};
+function getPtrPosStage({ x, y }) {
+    return { x: x - container.offsetLeft, y: y - container.offsetTop };
 }
 
 // Début d'un nouveau trait.
@@ -396,7 +409,7 @@ function newLine(e) {
         return;
     isPaint = true;
     const pos = stage.getPointerPosition();
-    var props = {coords: pos, width: epaisseur, clr: color, mode: (outils[outil_id].tool === 'brush') ? 'source-over' : 'destination-out', points: []};
+    var props = { coords: pos, width: epaisseur, clr: color, mode: (outils[outil_id].tool === 'brush') ? 'source-over' : 'destination-out', points: [] };
     lastLine = buildNewLine(props);
     socket.emit("ctos draw line", props);
     addContent(lastLine);
@@ -406,8 +419,8 @@ function newLine(e) {
 function newPoint(e) {
     if (!isPaint || !roleDessinateur)
         return;
-    const pos = getPtrPosStage({x: e.pageX, y: e.pageY});
-    var props = {coords: pos};
+    const pos = getPtrPosStage({ x: e.pageX, y: e.pageY });
+    var props = { coords: pos };
     var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
     socket.emit("ctos draw point", props);
     lastLine.points(newPoints);
@@ -429,7 +442,7 @@ function nouveauRond() {
     if (!roleDessinateur)
         return;
     var pos = stage.getPointerPosition();
-    var props = {coords:pos, radius: epaisseur * 2, fill: color};
+    var props = { coords: pos, radius: epaisseur * 2, fill: color };
     var rond = buildNewCircle(props);
     socket.emit("ctos draw cercle", props);
     addContent(rond);
@@ -480,19 +493,19 @@ function nouveauRemplissage() {
         return;
     let cwidth = stage.width();
     let cheigth = stage.height();
-    let dim = {width: cwidth, height: cheigth};
-    let imageData = layer.toCanvas().getContext('2d').getImageData(0,0,cwidth,cheigth);
+    let dim = { width: cwidth, height: cheigth };
+    let imageData = layer.toCanvas().getContext('2d').getImageData(0, 0, cwidth, cheigth);
     let data = imageData.data;
     // Comme chaque pixel du remplissage peut, soit être transparent, soit avoir la couleur du remplissage,
     // on peut réduire les informations à un nombre par pixel : 0 (transparent) ou 1 (couleur).
     let dataDest = [cwidth * cheigth];
     dataDest.fill(0);
     var pos = stage.getPointerPosition();
-    var posInt = {x: Math.trunc(pos.x), y: Math.trunc(pos.y)};
+    var posInt = { x: Math.trunc(pos.x), y: Math.trunc(pos.y) };
 
-    let colDest = {r: parseInt(color.slice(1,3),16), g: parseInt(color.slice(3,5),16), b: parseInt(color.slice(5,7),16), a: 255};
+    let colDest = { r: parseInt(color.slice(1, 3), 16), g: parseInt(color.slice(3, 5), 16), b: parseInt(color.slice(5, 7), 16), a: 255 };
     let indexClic = getIndex(posInt.x, posInt.y, dim);
-    let colCible = {r: data[indexClic], g: data[indexClic + 1], b: data[indexClic + 2], a: data[indexClic + 3]};
+    let colCible = { r: data[indexClic], g: data[indexClic + 1], b: data[indexClic + 2], a: data[indexClic + 3] };
     if (colDest.r == colCible.r && colDest.g == colCible.g && colDest.b == colCible.b && colDest.a == colCible.a)
         return;
     var p = [];
@@ -503,16 +516,16 @@ function nouveauRemplissage() {
         dataDest[pix.y * dim.width + pix.x] = 1;
         setColor(data, getIndex(pix.x, pix.y, dim), colDest);
         if (cmpColor(data, getIndex(pix.x, pix.y - 1, dim), colCible))
-            p.push({x: pix.x, y: pix.y - 1});
+            p.push({ x: pix.x, y: pix.y - 1 });
         if (cmpColor(data, getIndex(pix.x, pix.y + 1, dim), colCible))
-            p.push({x: pix.x, y: pix.y + 1});
+            p.push({ x: pix.x, y: pix.y + 1 });
         if (cmpColor(data, getIndex(pix.x - 1, pix.y, dim), colCible))
-            p.push({x: pix.x - 1, y: pix.y});
+            p.push({ x: pix.x - 1, y: pix.y });
         if (cmpColor(data, getIndex(pix.x + 1, pix.y, dim), colCible))
-            p.push({x: pix.x + 1, y: pix.y});
+            p.push({ x: pix.x + 1, y: pix.y });
     }
-    buildNewImage({dim: dim, color: colDest, data: dataDest}).then((image) => {addContent(image);});
-    let props = {dim: dim, color: colDest, data: []};
+    buildNewImage({ dim: dim, color: colDest, data: dataDest }).then((image) => { addContent(image); });
+    let props = { dim: dim, color: colDest, data: [] };
     compresseData(props, dataDest);
     socket.emit("ctos draw fill", props);
 }
@@ -526,7 +539,7 @@ function resetBinds() {
 
 // Création des boutons pour les outils.
 for (let i = 0; i < ochild.length; i++) {
-    ochild[i].addEventListener('click', function() {
+    ochild[i].addEventListener('click', function () {
         for (let j = 0; j < ochild.length; j++) {
             ochild[j].style.borderColor = 'black';
         }
@@ -539,7 +552,7 @@ for (let i = 0; i < ochild.length; i++) {
 
 // Création des boutons pour les couleurs.
 for (let i = 0; i < cchild.length; i++) {
-    cchild[i].addEventListener('click', function() {
+    cchild[i].addEventListener('click', function () {
         for (let j = 0; j < cchild.length; j++)
             cchild[j].style.borderColor = 'black';
         cchild[i].style.borderColor = 'red';
@@ -549,7 +562,7 @@ for (let i = 0; i < cchild.length; i++) {
 
 // Création des boutons pour les tailles.
 for (let i = 0; i < tchild.length; i++) {
-    tchild[i].addEventListener('click', function() {
+    tchild[i].addEventListener('click', function () {
         for (let j = 0; j < tchild.length; j++)
             tchild[j].style.borderColor = 'black';
         tchild[i].style.borderColor = 'red';
@@ -558,7 +571,7 @@ for (let i = 0; i < tchild.length; i++) {
 }
 
 // Bouton de suppression.
-poubelleImg.addEventListener('click', function() {
+poubelleImg.addEventListener('click', function () {
     console.log(document.cookie);
     if (!roleDessinateur)
         return;
@@ -571,7 +584,7 @@ poubelleImg.addEventListener('click', function() {
 });
 
 // Bouton undo.
-undoImg.addEventListener('click', function() {
+undoImg.addEventListener('click', function () {
     if (!roleDessinateur)
         return;
     if (sizeDrawn > 0) {
@@ -579,11 +592,11 @@ undoImg.addEventListener('click', function() {
         content[sizeDrawn].remove();
         socket.emit("ctos undo");
     }
-    
+
 });
 
 // Bouton redo.
-redoImg.addEventListener('click', function() {
+redoImg.addEventListener('click', function () {
     if (!roleDessinateur)
         return;
     if (sizeDrawn < content.length) {
@@ -591,7 +604,7 @@ redoImg.addEventListener('click', function() {
         sizeDrawn++;
         socket.emit("ctos redo");
     }
-    
+
 });
 
 // Le crayon est l'outil sélectionné par défaut
