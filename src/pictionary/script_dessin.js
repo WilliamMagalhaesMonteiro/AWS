@@ -29,7 +29,10 @@ form.addEventListener('submit', function (e) {
         var item = document.createElement('li');
         item.textContent = username + ": " + input.value;
         messages.appendChild(item);
-        window.scrollTo(0, document.body.scrollHeight);
+        messages.scrollTop = messages.scrollHeight;
+
+
+        // window.scrollTo(0, document.body.scrollHeight);
         input.value = '';
     }
 });
@@ -262,7 +265,7 @@ function stocMessage(msg) {
     }
     messages.appendChild(item);
 
-    window.scrollTo(0, document.body.scrollHeight);
+    messages.scrollTop = messages.scrollHeight;
 }
 
 const username = document.cookie.replace("name=", "");
@@ -302,6 +305,8 @@ socket.on("stoc user list", function (list) {
 
         playersList.appendChild(playerContainer);
     }
+
+
 });
 
 socket.on("stoc chat stack", function (stack) {
