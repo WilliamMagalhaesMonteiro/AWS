@@ -25,7 +25,7 @@ form.addEventListener('submit', function (e) {
     e.preventDefault();
     if (input.value) {
         var texte = input.value;
-        socket.emit('chat message', { texte, username });
+        socket.emit('chat message', texte);
         var item = document.createElement('li');
         item.textContent = username + ": " + input.value;
         messages.appendChild(item);
@@ -250,18 +250,14 @@ function stocRedo() {
 }
 
 function stocMessage(msg) {
+    console.log("hey");
     var item = document.createElement('li');
-    let text = msg.text;
-    let user = msg.user;
-    let bool = msg.bool;
-
-
-    if (bool == 1) {
+    if (msg.bool) {
         item.style.color = "green";
-        item.textContent = text;
+        item.textContent = msg.text;
     }
     else {
-        item.textContent = user + ": " + text;
+        item.textContent = msg.user + ": " + msg.text;
     }
     messages.appendChild(item);
 
@@ -384,23 +380,26 @@ socket.on("stoc undo", stocUndo);
 
 socket.on("stoc redo", stocRedo);
 
-socket.on("stoc dessinateur", function (infos) {
+socket.on("stoc dessinateur", function (user) {
     resetBinds();
-    userDessinateur = infos.dessinateur;
-    if (userDessinateur === username || infos.dessinateur == "") {
+    userDessinateur = user;
+    if (userDessinateur === username || user == "") {
         // dessinateur
-        wordToFind.textContent = infos.mot_clair;
         outils[outil_id].binds();
         roleDessinateur = true;
     } else {
         // devineur
-        wordToFind.textContent = infos.mot_cache;
         roleDessinateur = false;
     }
     for (let elem of playersList.children) {
-        elem.style.backgroundColor = (elem.getAttribute("id") === infos.dessinateur)
+        elem.style.backgroundColor = (elem.getAttribute("id") === user)
             ? bgDessinateurColor : bgDevineurColor;
     }
+});
+
+socket.on("word to guess", function (mot) {
+    console.log("mot : " + mot);
+    wordToFind.textContent = mot;
 });
 
 // Calcule la position du curseur relativement à la zone de dessin à partir de la position absolue sur la fenêtre.
