@@ -39,12 +39,41 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'static')));
 
 app.get('/', function (req, res) {
-    res.redirect('/auth');
+    res.sendFile(path.join(__dirname, "accueil.html"));
 });
 
 app.get('/auth', function (req, res) {
     // Rendu de la page d'authentification
     res.render('login');
+    
+});
+
+app.get('/register', function (req, res) {
+    res.render('register');
+});
+
+app.post('/register', function (req, res) {
+    let username = req.body.username;
+    let password = req.body.password;
+    if (username && password) {
+        // Vraiment la base de la base avec les failles qui vont avec
+        connection.query("select * from comptes where username = ?;", [username], function (error, results) {
+            if (error)  {
+                console.log(error);
+                return res.render('register', {message: "Une erreur est survenue.", username: username});
+            }
+            if (results.length > 0) {
+                return res.render('register', {message: "Nom d'utilisateur déjà utilisé.", username: username});
+            }
+            connection.query("insert into comptes (username, password) values (?, ?);", [username, password], function (error2, r) {
+                if (error2) {
+                    console.log(error2);
+                    return res.render('register', {message: "Une erreur est survenue.", username: username});
+                }
+                return res.redirect('/auth');
+            });
+        });
+    }
 });
 
 // Lorsque l'utilisateur clique sur 'Login'
@@ -55,17 +84,18 @@ app.post('/auth', function (req, res) {
     if (username && password) {
         // Vraiment la base de la base avec les failles qui vont avec
         connection.query("select * from comptes where username = ? and password = ?;", [username, password], function (error, results) {
-            if (error) throw error;
+            if (error) {
+                console.log(error);
+                return res.render('login', { message: "Une erreur est survenue.", username: username });
+            }
             if (results.length > 0) {
                 req.session.loggedin = true;
                 req.session.username = username;
                 res.cookie('name', req.session.username);
                 return res.redirect('/pictionary');
-            } else {
-                // Rendu de la page d'authentification avec des trucs à afficher en plus !
-                res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
             }
-            res.end();
+            // Rendu de la page d'authentification avec des trucs à afficher en plus !
+            return res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
         });
     }
 });

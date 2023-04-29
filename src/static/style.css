@@ -4,23 +4,30 @@
     font-size: 16px;
 }
 body {
-    background-color: #435165;
+    background-color: #f7d7b4;
 }
+
+#titre {
+    text-align: center;
+}
+
+#pictionary {
+    height: 150px;
+    width: 645px;
+    image-rendering: pixelated;
+    margin-top: 5rem;
+    margin-bottom: 5rem;
+}
+
 .login {
     width: 350px;
-    background-color: #ffffff;
-    box-shadow: 0 0 9px 0 rgba(0, 0, 0, 0.3);
     margin-left: auto;
     margin-right: auto;
-    margin-top: 10vh;
     margin-bottom: 10px;
 }
 .login h1 {
     text-align: center;
-    color: #5b6574;
     font-size: 24px;
-    padding: 20px 0 20px 0;
-    border-bottom: 1px solid #dee0e4;
 }
 .login form {
     display: flex;
@@ -28,22 +35,26 @@ body {
     justify-content: center;
     padding-top: 20px;
 }
-.login form input[type="password"], .login form input[type="text"] {
-    width: 80%;
-    height: 50px;
-    border: 1px solid #dee0e4;
+.login form input {
+    font-size: 20px;
+    width: 100%;
+    padding: 1rem;
     margin-bottom: 20px;
-    padding: 0 15px;
+    background-color: #e9e6ff;
+    border: solid 1px black;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 8px;
 }
 .login form input[type="submit"] {
     width: 100%;
     padding: 15px;
     margin-top: 20px;
-    background-color: #3274d6;
+    background-color: #8fbcff;
     border: 0;
     cursor: pointer;
     font-weight: bold;
-    color: #ffffff;
+    border-radius: 0;
 }
 .error {
     margin-left: auto;
@@ -55,4 +66,5 @@ body {
     text-align: center;
     font-weight: bold;
     border-style: double;
+    border-radius: 10px;
 }

@@ -1,0 +1,17 @@
+html
+  head
+    title Login
+    link(rel='stylesheet', href='/style.css')
+    script(src='reg_script.js' defer) 
+  body
+    div(id='titre')
+      img(src='/pictionary.png', id='pictionary')
+    div(class='login')
+      h1 Créer un compte
+      form(method='POST', action='/register', onsubmit='return validatePassword()', id='form')
+        input(type='text', name='username', placeholder="Nom d'utilisateur", value=username, required)
+        input(id='pwd', type='password', name='password', placeholder='Mot de passe', required)
+        input(id='pwd_conf', type='password', name='confirm_password', placeholder='Confirmer le mot de passe', required)
+        input(type='submit', value='Valider')
+    if message
+      p.error= message
