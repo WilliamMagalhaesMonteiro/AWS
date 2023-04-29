@@ -26,13 +26,7 @@ form.addEventListener('submit', function (e) {
     if (input.value) {
         var texte = input.value;
         socket.emit('chat message', texte);
-        var item = document.createElement('li');
-        item.textContent = username + ": " + input.value;
-        messages.appendChild(item);
-        messages.scrollTop = messages.scrollHeight;
-
-
-        // window.scrollTo(0, document.body.scrollHeight);
+        newChatMessage({user: username, text: texte, bool: false});
         input.value = '';
     }
 });
@@ -106,6 +100,7 @@ const borderYouColor = "#9060fe";
 const borderNotYouColor = "transparent";
 const bgDessinateurColor = "#ffbfcf";
 const bgDevineurColor = "#caf3fe";
+const bgVainqueurColor = "#80d066";
 
 var isPaint = false;
 var outil_id = 0;
@@ -249,27 +244,34 @@ function stocRedo() {
     }
 }
 
-function stocMessage(msg) {
-    console.log("hey");
+function newChatMessage(msg) {
     var item = document.createElement('li');
     if (msg.bool) {
+
+        const texteGras = document.createElement("b");
+        const texte = document.createTextNode(msg.text);
+        texteGras.appendChild(texte);
+        item.appendChild(texteGras);
+
         item.style.color = "green";
-        item.textContent = msg.text;
+        //item.textContent = msg.text;
     }
     else {
-        item.textContent = msg.user + ": " + msg.text;
+        const texteGras = document.createElement("b");
+        const texte = document.createTextNode(msg.user + " : ");
+        texteGras.appendChild(texte);
+        item.appendChild(texteGras);
+        item.appendChild(document.createTextNode(msg.text));
+
+
+        //item.textContent = msg.text;
     }
     messages.appendChild(item);
 
     messages.scrollTop = messages.scrollHeight;
 }
 
-const username = document.cookie.replace("name=", "");
-console.log(document.cookie);
-
-const socket = io("", { query: { username: username } });
-
-socket.on("stoc user list", function (list) {
+function userList(list) {
     playersList.innerHTML = ""; //nettoyage
     for (let user of list) {
         let playerContainer = document.createElement("div");
@@ -301,18 +303,66 @@ socket.on("stoc user list", function (list) {
 
         playersList.appendChild(playerContainer);
     }
+}
 
+function newDessinateur(user) {
+    resetBinds();
+    userDessinateur = user;
+    if (userDessinateur === username || user == "") {
+        // dessinateur
+        outils[outil_id].binds();
+        roleDessinateur = true;
+    } else {
+        // devineur
+        roleDessinateur = false;
+    }
+    for (let elem of playersList.children) {
+        elem.style.backgroundColor = (elem.getAttribute("id") === user)
+            ? bgDessinateurColor : bgDevineurColor;
+    }
+}
 
+const username = document.cookie.replace("name=", "");
+
+const socket = io("", { query: { username: username } });
+
+socket.on("game infos", function (infos) {
+    newDessinateur(infos.dessinateur);
+    wordToFind.textContent = infos.mot;
+    for (let elem of playersList.children) {
+        if (infos.vainqueurs.includes(elem.getAttribute("id"))) {
+            elem.style.backgroundColor = bgVainqueurColor;
+        }
+    }
+});
+
+socket.on("stoc user list", function (list) {
+    userList(list.users);
+    for (let elem of playersList.children) {
+        if (list.vainqueurs.includes(elem.getAttribute("id"))) {
+            elem.style.backgroundColor = bgVainqueurColor;
+        }
+    }
 });
 
 socket.on("stoc chat stack", function (stack) {
     for (let msg of stack) {
-        stocMessage(msg);
+        newChatMessage(msg);
     }
 });
 
 socket.on('chat message', function (msg) {
-    stocMessage(msg);
+    newChatMessage(msg);
+});
+
+socket.on("correct guess", function (user) {
+    newChatMessage({user: user, text: user + " a deviné le mot !", bool: true});
+
+    for (let elem of playersList.children) {
+        if (elem.getAttribute("id") === user) {
+            elem.style.backgroundColor = bgVainqueurColor
+        }
+    }
 });
 
 // Serveur -> pile d'exécution.
@@ -381,24 +431,10 @@ socket.on("stoc undo", stocUndo);
 socket.on("stoc redo", stocRedo);
 
 socket.on("stoc dessinateur", function (user) {
-    resetBinds();
-    userDessinateur = user;
-    if (userDessinateur === username || user == "") {
-        // dessinateur
-        outils[outil_id].binds();
-        roleDessinateur = true;
-    } else {
-        // devineur
-        roleDessinateur = false;
-    }
-    for (let elem of playersList.children) {
-        elem.style.backgroundColor = (elem.getAttribute("id") === user)
-            ? bgDessinateurColor : bgDevineurColor;
-    }
+    newDessinateur(user);
 });
 
 socket.on("word to guess", function (mot) {
-    console.log("mot : " + mot);
     wordToFind.textContent = mot;
 });
 

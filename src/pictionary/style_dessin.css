@@ -15,6 +15,16 @@ body {
     background-size: cover;
 }
 
+#titre {
+    text-align: center;
+}
+
+#pictionary {
+    height: 100px;
+    width: 430px;
+    image-rendering: pixelated;
+}
+
 #big-container {
     width: 100%;
     display: flex;
@@ -25,12 +35,12 @@ body {
     margin-right: 1%;
     width: 20%;
     border: 2px solid black;
-    background-color: rgb(207, 207, 207);
+    background-color: rgb(243, 243, 243);
     position: relative;
 }
 
 #chat-form {
-    background: rgba(0, 0, 0, 0.15);
+    background: rgba(108, 120, 163, 0.15);
     padding: 0.25rem;
     position: absolute;
     bottom: 0;
@@ -40,17 +50,24 @@ body {
     height: 2.5rem;
     box-sizing: border-box;
     backdrop-filter: blur(10px);
-    float: bottom;
-
 }
 
 #chat-form input {
     width: 100%;
 }
 
+#chat-form button {
+    background-color: #2a5fad;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ffffff;
+    padding-bottom: 0.25rem;
+    
+}
+
 #chat-messages {
     list-style-type: none;
-    margin: 0;
+    margin-bottom: 2.5rem;
     padding: 0;
     max-height: 615px;
     overflow-y: auto;
@@ -61,7 +78,7 @@ body {
 }
 
 #chat-messages li:nth-child(2n) {
-    background-color: rgba(218, 218, 218, 0.842);
+    background-color: rgb(230, 229, 241);
 }
 
 #word-to-find-box {

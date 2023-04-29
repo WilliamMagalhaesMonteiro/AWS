@@ -121,7 +121,7 @@ var game = false;
 var id_dessineur = 0;
 
 // Deux rooms : une où se trouvent le ou les dessinateurs, une où se trouvent ceux qui devinent.
-const roomDevinateurs = "room-2";
+const roomDevinateurs = "roomDev";
 
 function getRandomInt(max) {
     return Math.floor(Math.random() * max);
@@ -149,12 +149,10 @@ function nouveau_tour() {
     io.emit("stoc dessinateur", usr_dessinateur);
     for (let socket of sockets) {
         if (socket.handshake.query.username === usr_dessinateur) {
-            //socket.join(roomDessinateurs);
             socket.leave(roomDevinateurs);
             socket.emit("word to guess", game_mot);
         }   else {
             socket.join(roomDevinateurs);
-            //socket.leave(roomDessinateurs);
             socket.emit("word to guess", game_mot_cache);
         }
     }
@@ -183,7 +181,7 @@ io.on("connection", function (socket) {
     users.push(username);
     sockets.push(socket);
 
-    io.emit("stoc user list", users);
+    io.emit("stoc user list", {users: users, vainqueurs: users_vainqueurs});
 
     // Envoi de toute le pile d'éxécution pour que le nouveau client récupère l'état du dessin.
     socket.emit("stoc draw stack", { pile: draw_stack, lg: effSize });
@@ -197,22 +195,24 @@ io.on("connection", function (socket) {
         }
     } else {
         // Le joueur devient un nouveau devinateur.
-        socket.emit("stoc dessinateur", usr_dessinateur);
+        socket.emit("game infos", {dessinateur: usr_dessinateur, mot: game_mot_cache, vainqueurs: users_vainqueurs});
+        /*socket.emit("stoc dessinateur", usr_dessinateur);
         socket.emit("word to guess", game_mot_cache);
+        socket.emit("vainqueurs", users_vainqueurs);*/
         socket.join(roomDevinateurs);
     }
 
     socket.on("disconnect", function () {
         removeFromTab(users, username);
         removeFromTab(sockets, socket);
-        socket.broadcast.emit("stoc user list", users);
+        socket.broadcast.emit("stoc user list", {users: users, vainqueurs: users_vainqueurs});
         if (game) {
             if (io.engine.clientsCount < 2) {
                 game = false;
                 io.emit("stoc dessinateur", '');
                 // user vide pour indiquer que le jeu s'arrête
             } else {
-                if (usr_dessinateur == username) {
+                if (usr_dessinateur === username) {
                     // Le dessinateur s'est déconnecté !
                     nouveau_tour();
                 }
@@ -290,9 +290,9 @@ io.on("connection", function (socket) {
             if (data === game_mot) {
                 socket.leave(roomDevinateurs);
                 users_vainqueurs.push(username);
-                let text = username + " Guessed the word !";
-                io.emit('chat message', {user: username, text: text, bool: true});
-                chat_stack.push({user: username, text: text, bool: true});
+                //let text = username + " Guessed the word !";
+                io.emit('correct guess', username);
+                chat_stack.push({user: username, text: username + " a deviné le mot !", bool: true});
 
                 if (users_vainqueurs.length === users.length - 1) {
                     // Tout le monde a deviné
