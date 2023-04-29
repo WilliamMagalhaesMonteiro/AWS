@@ -4,7 +4,7 @@
     font-size: 16px;
 }
 body {
-    background-color: #f7d7b4;
+    background-image: url('fond.png');
 }
 
 #titre {
@@ -42,7 +42,6 @@ body {
     margin-bottom: 20px;
     background-color: #e9e6ff;
     border: solid 1px black;
-    cursor: pointer;
     font-weight: bold;
     border-radius: 8px;
 }

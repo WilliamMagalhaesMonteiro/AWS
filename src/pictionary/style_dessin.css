@@ -11,8 +11,8 @@ h1 {
 }
 
 body {
-    background-color: rgb(247, 215, 180);
-    background-size: cover;
+    background-image: url('images/fond.png');
+    /*background-size: cover;*/
 }
 
 #titre {
