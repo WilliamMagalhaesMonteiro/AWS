@@ -1,7 +1,7 @@
 var wwidth = window.innerWidth;
 var wheight = window.innerHeight;
 const fenetre = window;
-const ctn_name = "drawing-container"
+const ctn_name = "drawing-container";
 
 const container = document.getElementById(ctn_name);
 
@@ -85,16 +85,6 @@ for (let i = 0; i < tailles.length; i++) {
 var ochild = outilsDiv.children;
 var cchild = couleursDiv.children;
 var tchild = taillesDiv.children;
-
-var stage = new Konva.Stage({
-    container: ctn_name,
-    width: container.clientWidth,
-    height: container.clientHeight,
-});
-
-var layer = new Konva.Layer();
-layer.listening(false);
-stage.add(layer);
 
 const borderYouColor = "#9060fe";
 const borderNotYouColor = "transparent";
@@ -322,121 +312,10 @@ function newDessinateur(user) {
     }
 }
 
-const username = document.cookie.replace("name=", "");
+var stage = null;
+var layer = null;
 
-const socket = io("", { query: { username: username } });
-
-socket.on("game infos", function (infos) {
-    newDessinateur(infos.dessinateur);
-    wordToFind.textContent = infos.mot;
-    for (let elem of playersList.children) {
-        if (infos.vainqueurs.includes(elem.getAttribute("id"))) {
-            elem.style.backgroundColor = bgVainqueurColor;
-        }
-    }
-});
-
-socket.on("stoc user list", function (list) {
-    userList(list.users);
-    for (let elem of playersList.children) {
-        if (list.vainqueurs.includes(elem.getAttribute("id"))) {
-            elem.style.backgroundColor = bgVainqueurColor;
-        }
-    }
-});
-
-socket.on("stoc chat stack", function (stack) {
-    for (let msg of stack) {
-        newChatMessage(msg);
-    }
-});
-
-socket.on('chat message', function (msg) {
-    newChatMessage(msg);
-});
-
-socket.on("correct guess", function (user) {
-    newChatMessage({user: user, text: user + " a deviné le mot !", bool: true});
-
-    for (let elem of playersList.children) {
-        if (elem.getAttribute("id") === user) {
-            elem.style.backgroundColor = bgVainqueurColor
-        }
-    }
-});
-
-// Serveur -> pile d'exécution.
-// Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
-// Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
-// on gère 'content' non pas comme une pile mais comme un tableau où les éléments sont ajoutés au bon index.
-// Pour le layer on précise l'ordre d'affichage des éléments avec 'setZindex'.
-socket.on("stoc draw stack", function (props) {
-    content = [props.pile.length];
-    for (let i = 0; i < props.pile.length; i++) {
-        switch (props.pile[i].type) {
-            case 'newLine':
-                lastLine = buildNewLine(props.pile[i].props);
-                for (let elem of props.pile[i].props.points) {
-                    lastLine.points(lastLine.points().concat([elem.x, elem.y]));
-                }
-                if (i < props.lg) {
-                    layer.add(lastLine);
-                    lastLine.setZIndex(i);
-                }
-                lastLine.cache();
-                content[i] = lastLine;
-                continue;
-            case 'newCircle':
-                let cercle = buildNewCircle(props.pile[i].props);
-                if (i < props.lg) {
-                    layer.add(cercle);
-                    cercle.setZIndex(i);
-                }
-                content[i] = cercle;
-                continue;
-            case 'newFill':
-                let data = [props.pile[i].props.dim.width * props.pile[i].props.dim.heigth];
-                deCompresseData(props.pile[i].props, data);
-                buildNewImage({ dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data })
-                    .then((image) => {
-                        if (i < props.lg) {
-                            layer.add(image);
-                            image.setZIndex(i);
-                        }
-                        content[i] = image;
-                    });
-                continue;
-            default:
-                continue;
-        }
-    }
-    sizeDrawn = props.lg;
-});
-
-/* --- Récéption des commandes du serveur temps réel. --- */
-socket.on("stoc draw line", stocNewLine);
-
-socket.on("stoc draw point", stocNewPoint);
-
-socket.on("stoc cache line", stocCacheLine);
-
-socket.on("stoc draw cercle", stocNewCircle);
-
-socket.on("stoc draw fill", stocNewFill);
-
-socket.on("stoc delete", stocDelete);
-
-socket.on("stoc undo", stocUndo);
-
-socket.on("stoc redo", stocRedo);
-
-socket.on("stoc dessinateur", function (user) {
-    newDessinateur(user);
-});
-
-socket.on("word to guess", function (mot) {
-    wordToFind.textContent = mot;
-});
+let socket = null;
 
 // Calcule la position du curseur relativement à la zone de dessin à partir de la position absolue sur la fenêtre.
 function getPtrPosStage({ x, y }) {
@@ -612,7 +491,6 @@ for (let i = 0; i < tchild.length; i++) {
 
 // Bouton de suppression.
 poubelleImg.addEventListener('click', function () {
-    console.log(document.cookie);
     if (!roleDessinateur)
         return;
     if (confirm("Êtes-vous sûr de vouloir supprimer votre beau dessin ?")) {
@@ -647,9 +525,231 @@ redoImg.addEventListener('click', function () {
 
 });
 
+function nameFromCookie(cookie) {
+    let str = cookie.split(";");
+    for (let s of str) {
+        let ts = s.trim();
+        if (ts.startsWith("name=")) {
+            return ts.replace("name=", "");
+        }
+    }
+}
+
+const username = nameFromCookie(document.cookie);
+
+function everything() {
+    container.innerHTML = "";
+    stage = new Konva.Stage({
+        container: ctn_name,
+        width: container.clientWidth,
+        height: container.clientHeight,
+    });
+    layer = new Konva.Layer();
+    layer.listening(false);
+    stage.add(layer);
+
+    socket.on("game infos", function (infos) {
+        newDessinateur(infos.dessinateur);
+        wordToFind.textContent = infos.mot;
+        for (let elem of playersList.children) {
+            if (infos.vainqueurs.includes(elem.getAttribute("id"))) {
+                elem.style.backgroundColor = bgVainqueurColor;
+            }
+        }
+    });
+
+    socket.on("stoc user list", function (list) {
+        userList(list.users);
+        for (let elem of playersList.children) {
+            if (list.vainqueurs.includes(elem.getAttribute("id"))) {
+                elem.style.backgroundColor = bgVainqueurColor;
+            }
+        }
+    });
+
+    socket.on("stoc chat stack", function (stack) {
+        for (let msg of stack) {
+            newChatMessage(msg);
+        }
+    });
+
+    socket.on('chat message', function (msg) {
+        newChatMessage(msg);
+    });
+
+    socket.on("correct guess", function (user) {
+        newChatMessage({user: user, text: user + " a deviné le mot !", bool: true});
+
+        for (let elem of playersList.children) {
+            if (elem.getAttribute("id") === user) {
+                elem.style.backgroundColor = bgVainqueurColor
+            }
+        }
+    });
+
+    // Serveur -> pile d'exécution.
+    // Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
+    // Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
+    // on gère 'content' non pas comme une pile mais comme un tableau où les éléments sont ajoutés au bon index.
+    // Pour le layer on précise l'ordre d'affichage des éléments avec 'setZindex'.
+    socket.on("stoc draw stack", function (props) {
+        content = [props.pile.length];
+        for (let i = 0; i < props.pile.length; i++) {
+            switch (props.pile[i].type) {
+                case 'newLine':
+                    lastLine = buildNewLine(props.pile[i].props);
+                    for (let elem of props.pile[i].props.points) {
+                        lastLine.points(lastLine.points().concat([elem.x, elem.y]));
+                    }
+                    if (i < props.lg) {
+                        layer.add(lastLine);
+                        lastLine.setZIndex(i);
+                    }
+                    lastLine.cache();
+                    content[i] = lastLine;
+                    continue;
+                case 'newCircle':
+                    let cercle = buildNewCircle(props.pile[i].props);
+                    if (i < props.lg) {
+                        layer.add(cercle);
+                        cercle.setZIndex(i);
+                    }
+                    content[i] = cercle;
+                    continue;
+                case 'newFill':
+                    let data = [props.pile[i].props.dim.width * props.pile[i].props.dim.heigth];
+                    deCompresseData(props.pile[i].props, data);
+                    buildNewImage({ dim: props.pile[i].props.dim, color: props.pile[i].props.color, data: data })
+                        .then((image) => {
+                            if (i < props.lg) {
+                                layer.add(image);
+                                image.setZIndex(i);
+                            }
+                            content[i] = image;
+                        });
+                    continue;
+                default:
+                    continue;
+            }
+        }
+        sizeDrawn = props.lg;
+    });
+
+    /* --- Récéption des commandes du serveur temps réel. --- */
+    socket.on("stoc draw line", stocNewLine);
+
+    socket.on("stoc draw point", stocNewPoint);
+
+    socket.on("stoc cache line", stocCacheLine);
+
+    socket.on("stoc draw cercle", stocNewCircle);
+
+    socket.on("stoc draw fill", stocNewFill);
+
+    socket.on("stoc delete", stocDelete);
+
+    socket.on("stoc undo", stocUndo);
+
+    socket.on("stoc redo", stocRedo);
+
+    socket.on("stoc dessinateur", function (user) {
+        newDessinateur(user);
+    });
+
+    socket.on("word to guess", function (mot) {
+        wordToFind.textContent = mot;
+    });
+
+}
+
+function tentativeDeCo(roomID, owner) {
+    socket = io(roomID, {query: {username: username}});
+
+    socket.on('connect_error', () => {
+        let titre = document.createElement("p");
+        const texteGras = document.createElement("b");
+        texteGras.appendChild(document.createTextNode("Code de partie invalide."));
+        titre.appendChild(texteGras);
+        container.appendChild(titre);
+        return;
+    });
+
+    socket.on("connect", () => {
+        waitingScreen(roomID, owner);
+    });
+}
+
+function waitingScreen(roomID, owner) {
+    container.innerHTML = "";
+
+    let usersConnected = [username];
+
+    if (owner) {
+        let boutonStart = document.createElement("button");
+        boutonStart.textContent = "Démarrer la partie";
+        container.appendChild(boutonStart);
+
+        
+        let titre = document.createElement("p");
+        titre.appendChild(document.createTextNode("Code de la partie : "));
+        const texteGras = document.createElement("b");
+        texteGras.appendChild(document.createTextNode(roomID.replace("/", "")));
+        titre.appendChild(texteGras);
+        container.appendChild(titre);
+        
+        boutonStart.addEventListener("click", function () {
+            if (usersConnected.length > 1) {
+                socket.emit("ctos game start");
+                everything();
+            }
+        });
+    } else {
+        let titre = document.createElement("p");
+        titre.textContent = "En attente de joueurs...";
+        container.appendChild(titre);
+        socket.on("stoc game start", function () {
+            everything();
+        });
+    }
+
+    socket.on("stoc user list", function (list) {
+        usersConnected = list.users; 
+        userList(list.users);
+        for (let elem of playersList.children) {
+            if (list.vainqueurs.includes(elem.getAttribute("id"))) {
+                elem.style.backgroundColor = bgVainqueurColor;
+            }
+        }
+    });
+}
+
 // Le crayon est l'outil sélectionné par défaut
 ochild[0].style.borderColor = 'red';
 // Le premier bouton est sélectionné par défaut
 cchild[0].style.borderColor = 'red';
 // Epaisseur par défaut
 tchild[0].style.borderColor = 'red';
+
+let createRoomButton = document.getElementById("creer-room");
+createRoomButton.addEventListener("click", function () {
+    fetch('new-room', {
+        method: 'GET'
+    })
+    .then(function(response) {
+        response.text().then(function(text) {
+            tentativeDeCo(text, true);
+        })
+    })
+    .catch(function (err) {
+        console.log(err);
+    });
+});
+
+let joinRoomFrom = document.getElementById("rejoindre-room");
+let joinRoomInput = document.getElementById("join-input");
+joinRoomFrom.addEventListener('submit', function(info) {
+    info.preventDefault();
+    if (joinRoomInput.value) {
+        tentativeDeCo("/" + joinRoomInput.value, false);
+    }
+});
