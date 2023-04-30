@@ -23,8 +23,14 @@ connection.query(
         }
     }
 )
-
+const port_socket = 3000;
 const app = express();
+const http = require('http');
+const server = http
+    .createServer(app)
+    .listen(port_socket, () => {
+        console.log("listening on port " + port_socket);
+});
 
 app.set("view engine", "pug");
 
@@ -116,8 +122,6 @@ app.get('/pictionary', pictionaryGetVerifAuth, function (req, res) {
     // Le cookie est modifié pour ajouter le nom d'uilisteur, récupéré dans le script du pictionary côté client par la suite.
 });
 
-const port_socket = 3000;
-
 /* Socket et jeu */
 var draw_stack = [];
 var effSize = 0;
@@ -140,8 +144,6 @@ function clearPrev() {
     }
 }
 
-const http = require('http');
-const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
@@ -335,8 +337,4 @@ io.on("connection", function (socket) {
             }
         }
     });
-});
-
-server.listen(port_socket, () => {
-    console.log("listening on port " + port_socket);
 });
