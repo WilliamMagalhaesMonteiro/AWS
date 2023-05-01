@@ -715,7 +715,7 @@ function tentativeDeCo(roomID, owner) {
     socket.on('connect_error', () => {
         let titre = document.createElement("p");
         const texteGras = document.createElement("b");
-        texteGras.appendChild(document.createTextNode("Code de partie invalide."));
+        texteGras.appendChild(document.createTextNode("Partie introuvable"));
         titre.appendChild(texteGras);
         container.appendChild(titre);
         return;
@@ -727,22 +727,59 @@ function tentativeDeCo(roomID, owner) {
     });
 }
 
+function copierTexte() {
+    texteCode = document.getElementById("texteCode");
+    texteCode.select();
+    navigator.clipboard.writeText(texteCode.value);
+    const span = document.getElementById("bouton-copie-span");
+    span.innerHTML = "Code copié !";
+}
+
+function outFunc() {
+    const span = document.getElementById("bouton-copie-span");
+    span.innerHTML = "Copier le code";
+}
+
 function waitingScreen(roomID, owner) {
     container.innerHTML = "";
 
     let usersConnected = [username];
 
     if (owner) {
-        let boutonStart = document.createElement("button");
-        boutonStart.textContent = "Démarrer la partie";
-        container.appendChild(boutonStart);
+
+        let divCodeCopier = document.createElement("div");
+        divCodeCopier.setAttribute("id", "code-copie");
 
         let titre = document.createElement("p");
         titre.appendChild(document.createTextNode("Code de la partie : "));
-        const texteGras = document.createElement("b");
-        texteGras.appendChild(document.createTextNode(roomID.replace("/", "")));
-        titre.appendChild(texteGras);
-        container.appendChild(titre);
+        const texteCode = document.createElement("input");
+        texteCode.setAttribute("id", "texteCode");
+        texteCode.setAttribute("value", roomID.replace("/", ""));
+        texteCode.setAttribute("readonly", true);
+
+        divCodeCopier.appendChild(titre);
+        divCodeCopier.appendChild(texteCode);
+
+
+        let boutonDiv = document.createElement("div");
+        boutonDiv.setAttribute("id", "bouton-copie-div");
+        
+        let boutonCopie = document.createElement("button");
+        boutonCopie.setAttribute("onclick", "copierTexte()");
+        boutonCopie.setAttribute("onmouseout", "outFunc()");
+        boutonCopie.setAttribute("id", "bonton-copie");
+
+        let span = document.createElement("span");
+        span.textContent = "Copier le code";
+        span.setAttribute("id", "bouton-copie-span");
+        span.setAttribute("class", "copie-span");
+        
+        boutonCopie.textContent = "Copier";
+        boutonCopie.appendChild(span);
+
+        boutonDiv.appendChild(boutonCopie);
+        divCodeCopier.appendChild(boutonDiv);
+        container.appendChild(divCodeCopier);
 
         let label = document.createElement("label");
         label.setAttribute("for", "range");
@@ -760,27 +797,27 @@ function waitingScreen(roomID, owner) {
         const inputDiv = document.createElement("div");
         inputDiv.setAttribute("id", "choix-dessinateurs");
 
-        let min = document.createElement("p");
         const minG = document.createElement("b");
         minG.appendChild(document.createTextNode("1"));
-        min.appendChild(minG);
 
-        let max = document.createElement("p");
         const maxG = document.createElement("b");
         maxG.appendChild(document.createTextNode("8"));
-        max.appendChild(maxG);
 
-        let val = document.createElement("p");
         const valG = document.createElement("b");
         valG.appendChild(document.createTextNode("1"));
-        val.appendChild(valG);
 
-        inputDiv.appendChild(min);
+        inputDiv.appendChild(minG);
         inputDiv.appendChild(input);
-        inputDiv.appendChild(max);
+        inputDiv.appendChild(maxG);
 
         container.appendChild(inputDiv);
-        container.appendChild(val);
+        container.appendChild(valG);
+
+        
+        let boutonStart = document.createElement("button");
+
+        boutonStart.textContent = "Démarrer la partie";
+        container.appendChild(boutonStart);
 
         input.addEventListener("input", function() {
             valG.innerHTML = "";
@@ -788,11 +825,19 @@ function waitingScreen(roomID, owner) {
         });
         
         boutonStart.addEventListener("click", function () {
-            if (usersConnected.length > 1) {
-                socket.emit("ctos game start", parseInt(input.value));
-                zoneDessin();
+            if (usersConnected.length < 2) {
+                alert("Nombre de joueurs insufisant.");
+                return;
             }
+            let inputValue = parseInt(input.value);
+            if (inputValue > usersConnected.length - 1) {
+                alert("Trop de dessinateurs.");
+                return;
+            }
+            socket.emit("ctos game start", inputValue);
+            zoneDessin();
         });
+
     } else {
         let titre = document.createElement("p");
         titre.textContent = "En attente de joueurs...";

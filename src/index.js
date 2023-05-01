@@ -256,14 +256,15 @@ function gameServer(roomPath) {
 
         if (!game) {
             // Début du jeu.
-            /*if (users.length >= 2) {
+            if (users.length >= 2) {
                 game = true;
                 nouveau_tour();
-            }*/
+            }
         } else {
             // Le joueur devient un nouveau devinateur.
             socket.emit("game infos", {dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs});
             socket.join(roomDevinateurs);
+            socket.emit("stoc game start");
         }
 
         socket.on("disconnect", function () {
