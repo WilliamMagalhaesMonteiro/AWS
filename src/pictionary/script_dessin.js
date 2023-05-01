@@ -289,6 +289,7 @@ function userList(list) {
         let pseudo = document.createElement("div");
         pseudo.appendChild(pseudoB);
         let score = document.createElement("div");
+        score.id = user + " score";
         score.textContent = 0 + " points";
         playerName.appendChild(pseudo);
         playerName.appendChild(score);
@@ -577,6 +578,13 @@ function socket_comm() {
     
     socket.on('chat message', function (msg) {
         newChatMessage(msg);
+    });
+
+    socket.on('new score', function(scores){
+        for(i of scores){
+           let div_score = document.getElementById(i.user + " score");
+            div_score.textContent = i.score + " points";
+        }
     });
     
     socket.on("correct guess", function (user) {

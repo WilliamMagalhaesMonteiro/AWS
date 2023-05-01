@@ -30,7 +30,7 @@ const server = http
     .createServer(app)
     .listen(port_socket, () => {
         console.log("listening on port " + port_socket);
-});
+    });
 
 app.set("view engine", "pug");
 
@@ -51,7 +51,7 @@ app.get('/', function (req, res) {
 app.get('/auth', function (req, res) {
     // Rendu de la page d'authentification
     res.render('login');
-    
+
 });
 
 app.get('/register', function (req, res) {
@@ -64,17 +64,17 @@ app.post('/register', function (req, res) {
     if (username && password) {
         // Vraiment la base de la base avec les failles qui vont avec
         connection.query("select * from comptes where username = ?;", [username], function (error, results) {
-            if (error)  {
+            if (error) {
                 console.log(error);
-                return res.render('register', {message: "Une erreur est survenue.", username: username});
+                return res.render('register', { message: "Une erreur est survenue.", username: username });
             }
             if (results.length > 0) {
-                return res.render('register', {message: "Nom d'utilisateur déjà utilisé.", username: username});
+                return res.render('register', { message: "Nom d'utilisateur déjà utilisé.", username: username });
             }
             connection.query("insert into comptes (username, password) values (?, ?);", [username, password], function (error2, r) {
                 if (error2) {
                     console.log(error2);
-                    return res.render('register', {message: "Une erreur est survenue.", username: username});
+                    return res.render('register', { message: "Une erreur est survenue.", username: username });
                 }
                 return res.redirect('/auth');
             });
@@ -153,6 +153,9 @@ function gameServer(roomPath) {
 
     var chat_stack = [];
 
+    var scores = [];
+
+
     var sockets = [];
     var users = [];
     var game_mot = "";
@@ -201,7 +204,7 @@ function gameServer(roomPath) {
         ioNsp.emit("stoc delete");
 
         nouveau_mot();
-        
+
         // Un des dessinateurs est choisit de façon cyclique
         id_dessineur = (id_dessineur + 1) % users.length;
         usrs_dessinateurs = [users[id_dessineur]];
@@ -210,7 +213,7 @@ function gameServer(roomPath) {
             let new_dessinateur;
             do {
                 new_dessinateur = users[getRandomInt(usrs_dessinateurs.length - 1)];
-            } while(usrs_dessinateurs.includes(new_dessinateur));
+            } while (usrs_dessinateurs.includes(new_dessinateur));
             usrs_dessinateurs.push(new_dessinateur);
         }
 
@@ -219,7 +222,7 @@ function gameServer(roomPath) {
             if (usrs_dessinateurs.includes(socket.handshake.query.username)) {
                 socket.leave(roomDevinateurs);
                 socket.join(roomDessinateurs);
-            }   else {
+            } else {
                 socket.join(roomDevinateurs);
                 socket.leave(roomDessinateurs);
             }
@@ -229,8 +232,8 @@ function gameServer(roomPath) {
             msg += usrs_dessinateurs[i] + ((i == usrs_dessinateurs.length - 1) ? "" : ", ");
         }
         msg += " de dessiner !";
-        ioNsp.emit('chat message', {user: "", text: msg, bool: true});
-        chat_stack.push({user: "", text: msg, bool: true});
+        ioNsp.emit('chat message', { user: "", text: msg, bool: true });
+        chat_stack.push({ user: "", text: msg, bool: true });
         ioNsp.to(roomDessinateurs).emit("stoc nouveau mot", game_mot);
     }
 
@@ -248,7 +251,10 @@ function gameServer(roomPath) {
         users.push(username);
         sockets.push(socket);
 
-        ioNsp.emit("stoc user list", {users: users, vainqueurs: users_vainqueurs});
+        scores.push({ user: username, score: 0 });
+
+
+        ioNsp.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
 
         // Envoi de toute le pile d'éxécution pour que le nouveau client récupère l'état du dessin.
         socket.emit("stoc draw stack", { pile: draw_stack, lg: effSize });
@@ -262,7 +268,7 @@ function gameServer(roomPath) {
             }
         } else {
             // Le joueur devient un nouveau devinateur.
-            socket.emit("game infos", {dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs});
+            socket.emit("game infos", { dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs });
             socket.join(roomDevinateurs);
             socket.emit("stoc game start");
         }
@@ -270,7 +276,7 @@ function gameServer(roomPath) {
         socket.on("disconnect", function () {
             removeFromTab(users, username);
             removeFromTab(sockets, socket);
-            socket.broadcast.emit("stoc user list", {users: users, vainqueurs: users_vainqueurs});
+            socket.broadcast.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
             if (game) {
                 if (users.length < 2) {
                     game = false;
@@ -374,15 +380,23 @@ function gameServer(roomPath) {
 
         // Message dans le chat !
         socket.on('chat message', (data) => {
-            if (usrs_dessinateurs.includes(username) || users_vainqueurs.includes(username) ) {
+            if (usrs_dessinateurs.includes(username) || users_vainqueurs.includes(username)) {
                 // Un dessinateur ou un vainqueur envoie un message
-                socket.broadcast.except(roomDevinateurs).emit('chat message', {user: username, text: data, bool: false});
+                socket.broadcast.except(roomDevinateurs).emit('chat message', { user: username, text: data, bool: false });
             } else {
                 if (data === game_mot) {
                     socket.leave(roomDevinateurs);
                     users_vainqueurs.push(username);
                     ioNsp.emit('correct guess', username);
-                    chat_stack.push({user: username, text: username + " a deviné le mot !", bool: true});
+                    chat_stack.push({ user: username, text: username + " a deviné le mot !", bool: true });
+
+
+                    for (let i of scores) {
+                        if (i.user == username) {
+                            i.score += 10;
+                        }
+                    }
+                    ioNsp.emit('new score', scores);
 
                     if (users_vainqueurs.length === users.length - usrs_dessinateurs.length) {
                         // Tout le monde a deviné
@@ -390,8 +404,8 @@ function gameServer(roomPath) {
                     }
                 }
                 else {
-                    socket.broadcast.emit('chat message', {user: username, text: data, bool: false});
-                    chat_stack.push({user: username, text: data, bool: false});
+                    socket.broadcast.emit('chat message', { user: username, text: data, bool: false });
+                    chat_stack.push({ user: username, text: data, bool: false });
                 }
             }
         });
