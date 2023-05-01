@@ -121,6 +121,11 @@ body {
     
 }
 
+#choix-dessinateurs {
+    display: flex;
+    flex-direction: row;
+}
+
 .player-rank {
     font-weight: bold;
     font-size: 1.5rem;

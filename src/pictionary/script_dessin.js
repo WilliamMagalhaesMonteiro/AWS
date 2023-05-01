@@ -105,7 +105,8 @@ var sizeDrawn = 0;
 
 // role
 var roleDessinateur = false;
-var userDessinateur = "";
+var usersDessinateurs = [];
+var nb_users = 1;
 
 // Ajout d'un nouvel élément au Layer, avec gestion de l'historique.
 function addContent(ctt) {
@@ -262,13 +263,14 @@ function newChatMessage(msg) {
 }
 
 function userList(list) {
+    nb_users = list.length;
     playersList.innerHTML = ""; //nettoyage
     for (let user of list) {
         let playerContainer = document.createElement("div");
         playerContainer.setAttribute("class", "player-container");
         playerContainer.setAttribute("id", user);
         playerContainer.style.borderColor = (user === username) ? borderYouColor : borderNotYouColor;
-        playerContainer.style.backgroundColor = (userDessinateur === user) ? bgDessinateurColor : bgDevineurColor;
+        playerContainer.style.backgroundColor = (usersDessinateurs.includes(user)) ? bgDessinateurColor : bgDevineurColor;
 
         let playerRank = document.createElement("p");
         playerRank.setAttribute("class", "player-rank align-vertical");
@@ -295,19 +297,16 @@ function userList(list) {
     }
 }
 
-function newDessinateur(user) {
+function newDessinateurs(users) {
     resetBinds();
-    userDessinateur = user;
-    if (userDessinateur === username || user == "") {
-        // dessinateur
-        outils[outil_id].binds();
+    usersDessinateurs = users;
+    if (usersDessinateurs.includes(username) || users == []) {
         roleDessinateur = true;
     } else {
-        // devineur
         roleDessinateur = false;
     }
     for (let elem of playersList.children) {
-        elem.style.backgroundColor = (elem.getAttribute("id") === user)
+        elem.style.backgroundColor = (users.includes(elem.getAttribute("id")))
             ? bgDessinateurColor : bgDevineurColor;
     }
 }
@@ -537,7 +536,7 @@ function nameFromCookie(cookie) {
 
 const username = nameFromCookie(document.cookie);
 
-function everything() {
+function zoneDessin() {
     container.innerHTML = "";
     stage = new Konva.Stage({
         container: ctn_name,
@@ -547,17 +546,20 @@ function everything() {
     layer = new Konva.Layer();
     layer.listening(false);
     stage.add(layer);
+}
 
+function socket_comm() {
     socket.on("game infos", function (infos) {
-        newDessinateur(infos.dessinateur);
+        newDessinateurs(infos.dessinateurs);
         wordToFind.textContent = infos.mot;
         for (let elem of playersList.children) {
             if (infos.vainqueurs.includes(elem.getAttribute("id"))) {
                 elem.style.backgroundColor = bgVainqueurColor;
             }
         }
+        zoneDessin();
     });
-
+    
     socket.on("stoc user list", function (list) {
         userList(list.users);
         for (let elem of playersList.children) {
@@ -566,27 +568,27 @@ function everything() {
             }
         }
     });
-
+    
     socket.on("stoc chat stack", function (stack) {
         for (let msg of stack) {
             newChatMessage(msg);
         }
     });
-
+    
     socket.on('chat message', function (msg) {
         newChatMessage(msg);
     });
-
+    
     socket.on("correct guess", function (user) {
         newChatMessage({user: user, text: user + " a deviné le mot !", bool: true});
-
+    
         for (let elem of playersList.children) {
             if (elem.getAttribute("id") === user) {
                 elem.style.backgroundColor = bgVainqueurColor
             }
         }
     });
-
+    
     // Serveur -> pile d'exécution.
     // Envoyé lors d'une nouvelle connexion, pour récupérer l'état du dessin.
     // Pour gérer le côté asynchrone de la création d'une image pour les remplissages,
@@ -634,33 +636,78 @@ function everything() {
         }
         sizeDrawn = props.lg;
     });
-
+    
     /* --- Récéption des commandes du serveur temps réel. --- */
     socket.on("stoc draw line", stocNewLine);
-
+    
     socket.on("stoc draw point", stocNewPoint);
-
+    
     socket.on("stoc cache line", stocCacheLine);
-
+    
     socket.on("stoc draw cercle", stocNewCircle);
-
+    
     socket.on("stoc draw fill", stocNewFill);
-
+    
     socket.on("stoc delete", stocDelete);
-
+    
     socket.on("stoc undo", stocUndo);
-
+    
     socket.on("stoc redo", stocRedo);
-
-    socket.on("stoc dessinateur", function (user) {
-        newDessinateur(user);
+    
+    socket.on("stoc dessinateur", function (users) {
+        newDessinateurs(users);
+        container.innerHTML = "";
+        if (roleDessinateur) {
+            let titre = document.createElement("p");
+            titre.appendChild(document.createTextNode("Mot : "));
+            const mot = document.createElement("b");
+            mot.setAttribute("id", "proposition-mot");
+            mot.appendChild(document.createTextNode(""));
+            titre.appendChild(mot);
+            container.appendChild(titre);
+    
+            const boutonValider = document.createElement("button");
+            boutonValider.textContent = "Valider";
+            container.appendChild(boutonValider);
+    
+            const boutonNouveau = document.createElement("button");
+            boutonNouveau.textContent = "Nouveau mot";
+            container.appendChild(boutonNouveau);
+    
+            boutonValider.addEventListener("click", function () {
+                socket.emit("ctos word chosen");
+            });
+    
+            boutonNouveau.addEventListener("click", function () {
+                socket.emit("ctos nouveau mot");
+            });
+    
+        } else {
+            let titre = document.createElement("p");
+            const texteGras = document.createElement("b");
+            texteGras.appendChild(document.createTextNode(usersDessinateurs.length > 1
+                ? "Les dessinateurs choisissent un mot..." : "Le dessinateur choisit un mot..."));
+            titre.appendChild(texteGras);
+            container.appendChild(titre);
+        }
     });
-
+    
+    socket.on("stoc nouveau mot", function (mot) {
+        const leMot = document.getElementById("proposition-mot");
+        leMot.innerHTML = "";
+        leMot.appendChild(document.createTextNode(mot));
+    })
+    
     socket.on("word to guess", function (mot) {
+        container.innerHTML = "";
+        zoneDessin();
         wordToFind.textContent = mot;
+        if (usersDessinateurs.includes(username)) {
+            outils[outil_id].binds();
+        }
     });
-
 }
+
 
 function tentativeDeCo(roomID, owner) {
     socket = io(roomID, {query: {username: username}});
@@ -675,6 +722,7 @@ function tentativeDeCo(roomID, owner) {
     });
 
     socket.on("connect", () => {
+        socket_comm();
         waitingScreen(roomID, owner);
     });
 }
@@ -689,18 +737,60 @@ function waitingScreen(roomID, owner) {
         boutonStart.textContent = "Démarrer la partie";
         container.appendChild(boutonStart);
 
-        
         let titre = document.createElement("p");
         titre.appendChild(document.createTextNode("Code de la partie : "));
         const texteGras = document.createElement("b");
         texteGras.appendChild(document.createTextNode(roomID.replace("/", "")));
         titre.appendChild(texteGras);
         container.appendChild(titre);
+
+        let label = document.createElement("label");
+        label.setAttribute("for", "range");
+        label.textContent = "Nombre de dessinateurs : ";
+        container.appendChild(label);
+
+        let input = document.createElement("input");
+        input.setAttribute("type", "range");
+        input.setAttribute("id", "range");
+        input.setAttribute("name", "range");
+        input.setAttribute("min", "1");
+        input.setAttribute("max", "8");
+        input.setAttribute("value", "1");
+
+        const inputDiv = document.createElement("div");
+        inputDiv.setAttribute("id", "choix-dessinateurs");
+
+        let min = document.createElement("p");
+        const minG = document.createElement("b");
+        minG.appendChild(document.createTextNode("1"));
+        min.appendChild(minG);
+
+        let max = document.createElement("p");
+        const maxG = document.createElement("b");
+        maxG.appendChild(document.createTextNode("8"));
+        max.appendChild(maxG);
+
+        let val = document.createElement("p");
+        const valG = document.createElement("b");
+        valG.appendChild(document.createTextNode("1"));
+        val.appendChild(valG);
+
+        inputDiv.appendChild(min);
+        inputDiv.appendChild(input);
+        inputDiv.appendChild(max);
+
+        container.appendChild(inputDiv);
+        container.appendChild(val);
+
+        input.addEventListener("input", function() {
+            valG.innerHTML = "";
+            valG.appendChild(document.createTextNode(range.value));
+        });
         
         boutonStart.addEventListener("click", function () {
             if (usersConnected.length > 1) {
-                socket.emit("ctos game start");
-                everything();
+                socket.emit("ctos game start", parseInt(input.value));
+                zoneDessin();
             }
         });
     } else {
@@ -708,7 +798,7 @@ function waitingScreen(roomID, owner) {
         titre.textContent = "En attente de joueurs...";
         container.appendChild(titre);
         socket.on("stoc game start", function () {
-            everything();
+            zoneDessin();
         });
     }
 

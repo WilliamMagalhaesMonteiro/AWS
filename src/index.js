@@ -144,7 +144,7 @@ function removeFromTab(tab, elem) {
 }
 
 function gameServer(roomPath) {
-    ioNsp = io.of(roomPath);
+    const ioNsp = io.of(roomPath);
 
     /* Socket et jeu */
     var draw_stack = [];
@@ -153,12 +153,13 @@ function gameServer(roomPath) {
 
     var chat_stack = [];
 
-    let sockets = [];
+    var sockets = [];
     var users = [];
     var game_mot = "";
     var game_mot_cache = "";
-    var usr_dessinateur = "";
+    var usrs_dessinateurs = [];
 
+    var nb_dessinateurs = 1;
     var users_vainqueurs = [];
 
     function clearPrev() {
@@ -175,6 +176,7 @@ function gameServer(roomPath) {
 
     // Deux rooms : une où se trouvent le ou les dessinateurs, une où se trouvent ceux qui devinent.
     const roomDevinateurs = "roomDev";
+    const roomDessinateurs = "roomDess";
 
     function getRandomInt(max) {
         return Math.floor(Math.random() * max);
@@ -184,34 +186,52 @@ function gameServer(roomPath) {
         draw_stack.splice(0, draw_stack.length);
     }
 
+    function nouveau_mot() {
+        var nouveauMot;
+        do {
+            nouveauMot = mots_list[getRandomInt(mots_list.length - 1)].mot;
+        } while (nouveauMot === game_mot);
+        game_mot = nouveauMot;
+    }
+
     function nouveau_tour() {
         users_vainqueurs = [];
         // Le dessin est effacé !
         suppression();
         ioNsp.emit("stoc delete");
 
-        game_mot = mots_list[getRandomInt(mots_list.length - 1)].mot;
-        game_mot_cache = "";
-        // remplacer les lettres du mots par des '_' pour les devinateurs
-        for (let c of game_mot) {
-            game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
-        }
+        nouveau_mot();
+        
+        // Un des dessinateurs est choisit de façon cyclique
         id_dessineur = (id_dessineur + 1) % users.length;
-        usr_dessinateur = users[id_dessineur];
+        usrs_dessinateurs = [users[id_dessineur]];
+        // Les autres sont aléatoires
+        for (var i = 1; i < nb_dessinateurs && i < users.length - 1; i++) {
+            let new_dessinateur;
+            do {
+                new_dessinateur = users[getRandomInt(usrs_dessinateurs.length - 1)];
+            } while(usrs_dessinateurs.includes(new_dessinateur));
+            usrs_dessinateurs.push(new_dessinateur);
+        }
 
-        ioNsp.emit("stoc dessinateur", usr_dessinateur);
+        ioNsp.emit("stoc dessinateur", usrs_dessinateurs);
         for (let socket of sockets) {
-            if (socket.handshake.query.username === usr_dessinateur) {
+            if (usrs_dessinateurs.includes(socket.handshake.query.username)) {
                 socket.leave(roomDevinateurs);
-                socket.emit("word to guess", game_mot);
+                socket.join(roomDessinateurs);
             }   else {
                 socket.join(roomDevinateurs);
-                socket.emit("word to guess", game_mot_cache);
+                socket.leave(roomDessinateurs);
             }
         }
-        let msg = "Au tour de " + usr_dessinateur + " de dessiner !";
+        let msg = "Au tour de ";
+        for (var i = 0; i < usrs_dessinateurs.length; i++) {
+            msg += usrs_dessinateurs[i] + ((i == usrs_dessinateurs.length - 1) ? "" : ", ");
+        }
+        msg += " de dessiner !";
         ioNsp.emit('chat message', {user: "", text: msg, bool: true});
         chat_stack.push({user: "", text: msg, bool: true});
+        ioNsp.to(roomDessinateurs).emit("stoc nouveau mot", game_mot);
     }
 
     // Nouvelle connexion.
@@ -222,7 +242,7 @@ function gameServer(roomPath) {
 
         if (users.includes(username) || users.length >= 8) {
             // Un utilisateur ne peut se connecter qu'une seule fois, et le nombre max de joueurs est de 8.
-            socket.disconnect(true);
+            socket.disconnect();
             return;
         }
         users.push(username);
@@ -236,16 +256,13 @@ function gameServer(roomPath) {
 
         if (!game) {
             // Début du jeu.
-            if (users.length >= 2) {
+            /*if (users.length >= 2) {
                 game = true;
                 nouveau_tour();
-            }
+            }*/
         } else {
             // Le joueur devient un nouveau devinateur.
-            socket.emit("game infos", {dessinateur: usr_dessinateur, mot: game_mot_cache, vainqueurs: users_vainqueurs});
-            /*socket.emit("stoc dessinateur", usr_dessinateur);
-            socket.emit("word to guess", game_mot_cache);
-            socket.emit("vainqueurs", users_vainqueurs);*/
+            socket.emit("game infos", {dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs});
             socket.join(roomDevinateurs);
         }
 
@@ -256,10 +273,10 @@ function gameServer(roomPath) {
             if (game) {
                 if (users.length < 2) {
                     game = false;
-                    ioNsp.emit("stoc dessinateur", '');
+                    ioNsp.emit("stoc dessinateur", []);
                     // user vide pour indiquer que le jeu s'arrête
                 } else {
-                    if (usr_dessinateur === username) {
+                    if (usrs_dessinateurs.length(username)) {
                         // Le dessinateur s'est déconnecté !
                         nouveau_tour();
                     }
@@ -271,7 +288,23 @@ function gameServer(roomPath) {
             }
         });
 
-        socket.on("ctos game start", function () {
+        socket.on("ctos nouveau mot", function () {
+            nouveau_mot();
+            ioNsp.to(roomDessinateurs).emit("stoc nouveau mot", game_mot);
+        });
+
+        socket.on("ctos word chosen", function () {
+            game_mot_cache = "";
+            // remplacer les lettres du mots par des '_' pour les devinateurs
+            for (let c of game_mot) {
+                game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
+            }
+            ioNsp.to(roomDevinateurs).emit("word to guess", game_mot_cache);
+            ioNsp.to(roomDessinateurs).emit("word to guess", game_mot);
+        });
+
+        socket.on("ctos game start", function (nbDess) {
+            nb_dessinateurs = nbDess;
             socket.broadcast.emit("stoc game start");
             game = true;
             nouveau_tour();
@@ -340,18 +373,17 @@ function gameServer(roomPath) {
 
         // Message dans le chat !
         socket.on('chat message', (data) => {
-            if (username === usr_dessinateur || users_vainqueurs.includes(username) ) {
+            if (usrs_dessinateurs.includes(username) || users_vainqueurs.includes(username) ) {
                 // Un dessinateur ou un vainqueur envoie un message
                 socket.broadcast.except(roomDevinateurs).emit('chat message', {user: username, text: data, bool: false});
             } else {
                 if (data === game_mot) {
                     socket.leave(roomDevinateurs);
                     users_vainqueurs.push(username);
-                    //let text = username + " Guessed the word !";
                     ioNsp.emit('correct guess', username);
                     chat_stack.push({user: username, text: username + " a deviné le mot !", bool: true});
 
-                    if (users_vainqueurs.length === users.length - 1) {
+                    if (users_vainqueurs.length === users.length - usrs_dessinateurs.length) {
                         // Tout le monde a deviné
                         nouveau_tour();
                     }
@@ -362,5 +394,5 @@ function gameServer(roomPath) {
                 }
             }
         });
-});
+    });
 }
