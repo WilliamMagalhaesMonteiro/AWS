@@ -3,16 +3,8 @@
     font-size: 16px;
 }
 
-h1 {
-    text-align: center;
-    color: rgb(3, 3, 3);
-    font-size: 200%;
-
-}
-
 body {
     background-image: url('images/fond.png');
-    /*background-size: cover;*/
 }
 
 #titre {
@@ -81,22 +73,36 @@ body {
     background-color: rgb(230, 229, 241);
 }
 
+#top-box {
+    display: flex;
+    align-items: center;
+}
+
+#temps-restant {
+    margin-left: 1rem;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
 #word-to-find-box {
-    /* align center */
-    margin-left: auto;
-    margin-right: auto;
-    /* -------------- */
+    margin-left: 40vw;
     text-align: center;
     background-color: rgba(199, 196, 190, 0.3);
-
-    /* ajouter de l'espace */
     padding-top: 1px;
     padding-bottom: 1px;
-    /* TODO: transformer en grid */
-    width: 36%;
+    width: 20rem;
 }
 
 #word-to-find {
+    font-size: 2rem;
+}
+
+#counter {
+    margin-left: 1rem;
+    color: #dd0000;
     font-size: 2rem;
 }
 
@@ -119,7 +125,7 @@ body {
 
 #drawing-container button {
     background-color: #f8a62a;
-    padding: 10px;
+    padding: 7px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
@@ -141,10 +147,10 @@ body {
     margin-right: 10px;
 }
 
-#code-copie input {
+.code-input {
     border: none;
     border-radius: 5px;
-    padding: 6px;
+    padding: 7px;
     text-align: center;
     font-size: 16px;
     width: 5rem;
@@ -155,8 +161,6 @@ body {
 #code-copie button {
     background-color: #2a5fad;
     color: white;
-    padding: 6px;
-    border-radius: 5px;
     margin-left: 10px;
     margin-top: 0;
 }

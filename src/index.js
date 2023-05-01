@@ -146,24 +146,26 @@ function removeFromTab(tab, elem) {
 function gameServer(roomPath) {
     const ioNsp = io.of(roomPath);
 
-    /* Socket et jeu */
-    var draw_stack = [];
-    var effSize = 0;
-    let lastLine;
+    var draw_stack = []; // la pile d'éléments ayant été dessinés
+    var effSize = 0; // le nombre d'éléments de la pile qui sont affichés (change avec undo/redo)
+    let lastLine;  // la dernière ligne ayant été tracée (ou en cours)
 
     var chat_stack = [];
 
-    var scores = [];
+    var scores = new Map(); // socres totaux des joueurs
+    var points_marques = new Map(); // points marqués lors du tour
 
+    var sockets = [];   // liste des sockets connectés au serveur
+    var users = []; // liste des noms des utilisateurs connectés
+    var game_mot = ""; // le mot que les dessinateurs doivent faire deviner
+    var game_mot_cache = ""; // le mot que les autres voients (des '_ _ _ ...')
+    var usrs_dessinateurs = []; // la liste des utilisateurs qui dessinent
 
-    var sockets = [];
-    var users = [];
-    var game_mot = "";
-    var game_mot_cache = "";
-    var usrs_dessinateurs = [];
+    var nb_dessinateurs = 1; // le nombre d'utilisateurs qui dessinent en même temps
+    var users_vainqueurs = []; // liste des utilisateurs qui on deviné le mot
 
-    var nb_dessinateurs = 1;
-    var users_vainqueurs = [];
+    var duree_round = 60;   // durée en seconde des rounds
+    var timeout = null; // ref vers la fonction en attente qui s'exécute quand le temps est écoulé
 
     function clearPrev() {
         if (effSize < draw_stack.length) {
@@ -197,7 +199,37 @@ function gameServer(roomPath) {
         game_mot = nouveauMot;
     }
 
+    function ajouterScore(value, key) {
+        scores.set(key, scores.get(key) + value);
+    }
+
+    function compareScore(a, b) {
+        return a.value < b.value ? 1 : (a.value > b.value ? -1 : 0);
+    }
+
+    function marquer_points() {
+        for (let user of usrs_dessinateurs) {
+            points_marques.set(user, users_vainqueurs.length);
+        }
+        points_marques.forEach(ajouterScore);
+        var arrayScores = Array.from(scores, ([name, value]) => ({ name, value }));
+        arrayScores.sort(compareScore);
+        var msg = "Points marqués : ";
+        for (let entry of points_marques.entries()) {
+            msg += entry[0] + " : " + entry[1] + ", ";
+        }
+        msg = msg.slice(0, -2);
+        msg += ".";
+        ioNsp.emit('new score', arrayScores);
+        ioNsp.emit('chat message', { user: "", text: msg, bool: true });
+        chat_stack.push({ user: "", text: msg, bool: true });
+        points_marques.clear();
+    }
+
     function nouveau_tour() {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
         users_vainqueurs = [];
         // Le dessin est effacé !
         suppression();
@@ -251,8 +283,7 @@ function gameServer(roomPath) {
         users.push(username);
         sockets.push(socket);
 
-        scores.push({ user: username, score: 0 });
-
+        scores.set(username, 0);
 
         ioNsp.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
 
@@ -260,13 +291,7 @@ function gameServer(roomPath) {
         socket.emit("stoc draw stack", { pile: draw_stack, lg: effSize });
         socket.emit("stoc chat stack", chat_stack);
 
-        if (!game) {
-            // Début du jeu.
-            if (users.length >= 2) {
-                game = true;
-                nouveau_tour();
-            }
-        } else {
+        if (game) {
             // Le joueur devient un nouveau devinateur.
             socket.emit("game infos", { dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs });
             socket.join(roomDevinateurs);
@@ -279,12 +304,11 @@ function gameServer(roomPath) {
             socket.broadcast.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
             if (game) {
                 if (users.length < 2) {
-                    game = false;
                     ioNsp.emit("stoc dessinateur", []);
                     // user vide pour indiquer que le jeu s'arrête
                 } else {
-                    if (usrs_dessinateurs.length(username)) {
-                        // Le dessinateur s'est déconnecté !
+                    if (usrs_dessinateurs.includes(username)) {
+                        // Un dessinateur s'est déconnecté !
                         nouveau_tour();
                     }
                 }
@@ -306,8 +330,12 @@ function gameServer(roomPath) {
             for (let c of game_mot) {
                 game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
             }
-            ioNsp.to(roomDevinateurs).emit("word to guess", game_mot_cache);
-            ioNsp.to(roomDessinateurs).emit("word to guess", game_mot);
+            ioNsp.to(roomDevinateurs).emit("word to guess", {mot: game_mot_cache, duree: duree_round});
+            ioNsp.to(roomDessinateurs).emit("word to guess", {mot: game_mot, duree: duree_round});
+            timeout = setTimeout(function() {
+                marquer_points();
+                nouveau_tour();
+            }, 1000 * (duree_round + 1));
         });
 
         socket.on("ctos game start", function (nbDess) {
@@ -389,17 +417,11 @@ function gameServer(roomPath) {
                     users_vainqueurs.push(username);
                     ioNsp.emit('correct guess', username);
                     chat_stack.push({ user: username, text: username + " a deviné le mot !", bool: true });
-
-
-                    for (let i of scores) {
-                        if (i.user == username) {
-                            i.score += 10;
-                        }
-                    }
-                    ioNsp.emit('new score', scores);
+                    points_marques.set(username, users.length - usrs_dessinateurs.length - users_vainqueurs.length + 1);
 
                     if (users_vainqueurs.length === users.length - usrs_dessinateurs.length) {
                         // Tout le monde a deviné
+                        marquer_points();
                         nouveau_tour();
                     }
                 }

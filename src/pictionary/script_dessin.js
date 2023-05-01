@@ -108,6 +108,9 @@ var roleDessinateur = false;
 var usersDessinateurs = [];
 var nb_users = 1;
 
+// scores
+var scores = [];
+
 // Ajout d'un nouvel élément au Layer, avec gestion de l'historique.
 function addContent(ctt) {
     if (sizeDrawn < content.length) {
@@ -216,7 +219,9 @@ function stocNewFill(props) {
 }
 // Serveur -> suppression du dessin.
 function stocDelete() {
-    layer.destroyChildren();
+    if (layer) {
+        layer.destroyChildren();
+    }
     sizeDrawn = 0;
     content.splice(0, content.length);
 }
@@ -289,12 +294,38 @@ function userList(list) {
         let pseudo = document.createElement("div");
         pseudo.appendChild(pseudoB);
         let score = document.createElement("div");
-        score.id = user + " score";
+        score.id = user + "-score";
         score.textContent = 0 + " points";
         playerName.appendChild(pseudo);
         playerName.appendChild(score);
 
         playersList.appendChild(playerContainer);
+    }
+    updateListScores();
+}
+
+function updateListScores() {
+    if (!scores || scores.length === 0) {
+        return;
+    }
+    const playerContainers = playersList.querySelectorAll('.player-container');
+    playerContainers.forEach(ctn => ctn.remove());
+
+    let c = 1;
+    for (let i of scores){
+        console.log(i);
+        for (let elem of playerContainers) {
+            if (elem.getAttribute("id") === i.name) {
+                console.log("OUI");
+                let div_score = elem.querySelector("#" + i.name + "-score");
+                div_score.textContent = i.value + " points";
+                let rank = elem.querySelector(".player-rank");
+                rank.textContent = "#" + c;
+                playersList.appendChild(elem);
+                break;
+            }
+        }
+        c++;
     }
 }
 
@@ -451,7 +482,9 @@ function nouveauRemplissage() {
 
 // Fonction de changement de l'outil, lorsque l'utilisateur clique sur un des boutons.
 function resetBinds() {
-    stage.off();
+    if (stage) {
+        stage.off();
+    }
     window.removeEventListener('mouseup', endLine);
     window.removeEventListener('mousemove', newPoint);
 }
@@ -549,6 +582,8 @@ function zoneDessin() {
     stage.add(layer);
 }
 
+var intervalle = null;
+
 function socket_comm() {
     socket.on("game infos", function (infos) {
         newDessinateurs(infos.dessinateurs);
@@ -580,11 +615,9 @@ function socket_comm() {
         newChatMessage(msg);
     });
 
-    socket.on('new score', function(scores){
-        for(i of scores){
-           let div_score = document.getElementById(i.user + " score");
-            div_score.textContent = i.score + " points";
-        }
+    socket.on('new score', function(new_scores) {
+        scores = new_scores;
+        updateListScores();
     });
     
     socket.on("correct guess", function (user) {
@@ -663,6 +696,9 @@ function socket_comm() {
     socket.on("stoc redo", stocRedo);
     
     socket.on("stoc dessinateur", function (users) {
+        if (intervalle) {
+            clearInterval(intervalle);
+        }
         newDessinateurs(users);
         container.innerHTML = "";
         if (roleDessinateur) {
@@ -706,13 +742,22 @@ function socket_comm() {
         leMot.appendChild(document.createTextNode(mot));
     })
     
-    socket.on("word to guess", function (mot) {
+    socket.on("word to guess", function (info) {
         container.innerHTML = "";
         zoneDessin();
-        wordToFind.textContent = mot;
+        wordToFind.textContent = info.mot;
         if (usersDessinateurs.includes(username)) {
             outils[outil_id].binds();
         }
+        var seconds = info.duree;
+        var compteur = document.getElementById("counter");
+        intervalle = setInterval(function() {
+            seconds--;
+            if (seconds === 0) {
+                clearInterval(intervalle);
+            }
+            compteur.textContent = "" + seconds;
+        }, 1000);
     });
 }
 
@@ -762,6 +807,7 @@ function waitingScreen(roomID, owner) {
         titre.appendChild(document.createTextNode("Code de la partie : "));
         const texteCode = document.createElement("input");
         texteCode.setAttribute("id", "texteCode");
+        texteCode.setAttribute("class", "code-input");
         texteCode.setAttribute("value", roomID.replace("/", ""));
         texteCode.setAttribute("readonly", true);
 
@@ -858,11 +904,6 @@ function waitingScreen(roomID, owner) {
     socket.on("stoc user list", function (list) {
         usersConnected = list.users; 
         userList(list.users);
-        for (let elem of playersList.children) {
-            if (list.vainqueurs.includes(elem.getAttribute("id"))) {
-                elem.style.backgroundColor = bgVainqueurColor;
-            }
-        }
     });
 }
 

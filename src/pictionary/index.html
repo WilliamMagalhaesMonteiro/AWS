@@ -12,9 +12,13 @@
 		<div id="titre">
 			<img id="pictionary" src="images/pictionary.png">
 		</div>
-		
-		<div id="word-to-find-box">
-			<p id="word-to-find"></p>
+		<div id="top-box">
+			<div id="word-to-find-box">
+				<b id="word-to-find">Le jeu !</b>
+			</div>
+			<div id="temps-restant">
+				Temps restant : <div id="counter"></div>
+			</div>
 		</div>
 		<br>
 		<div id="big-container">
@@ -24,7 +28,7 @@
 			<div id="middle-container">
 				<div id="drawing-container">
 					<form id="rejoindre-room" action="">
-						<input id="join-input" type='text' placeholder="Code de la partie" />
+						<input id="join-input" class="code-input" type='text' placeholder="Code" />
 						<button>Rejoindre la partie</button>
 					</form>
 					<button id="creer-room">
