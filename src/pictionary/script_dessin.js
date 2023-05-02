@@ -103,10 +103,11 @@ var lastLine;
 var content = [];
 var sizeDrawn = 0;
 
-// role
+// roles et utilisateurs
 var roleDessinateur = false;
+var users = [];
 var usersDessinateurs = [];
-var nb_users = 1;
+var usersVainqueurs = [];
 
 // scores
 var scores = [];
@@ -268,14 +269,16 @@ function newChatMessage(msg) {
 }
 
 function userList(list) {
-    nb_users = list.length;
+    users = list.users;
+    usersVainqueurs = list.vainqueurs;
     playersList.innerHTML = ""; //nettoyage
-    for (let user of list) {
+    for (let user of users) {
         let playerContainer = document.createElement("div");
         playerContainer.setAttribute("class", "player-container");
         playerContainer.setAttribute("id", user);
         playerContainer.style.borderColor = (user === username) ? borderYouColor : borderNotYouColor;
-        playerContainer.style.backgroundColor = (usersDessinateurs.includes(user)) ? bgDessinateurColor : bgDevineurColor;
+        playerContainer.style.backgroundColor = (usersDessinateurs.includes(user)) ? bgDessinateurColor
+            : (usersVainqueurs.includes(user) ? bgVainqueurColor : bgDevineurColor);
 
         let playerRank = document.createElement("p");
         playerRank.setAttribute("class", "player-rank align-vertical");
@@ -305,18 +308,19 @@ function userList(list) {
 }
 
 function updateListScores() {
-    if (!scores || scores.length === 0) {
-        return;
+    if (scores.length < users.length) {
+        for (let user of users) {
+            if (!scores.find(e => e.name === user)) {
+                scores.push({name: user, value: 0});
+            }
+        }
     }
     const playerContainers = playersList.querySelectorAll('.player-container');
     playerContainers.forEach(ctn => ctn.remove());
-
     let c = 1;
-    for (let i of scores){
-        console.log(i);
+    for (let i of scores) {
         for (let elem of playerContainers) {
             if (elem.getAttribute("id") === i.name) {
-                console.log("OUI");
                 let div_score = elem.querySelector("#" + i.name + "-score");
                 div_score.textContent = i.value + " points";
                 let rank = elem.querySelector(".player-rank");
@@ -588,21 +592,15 @@ function socket_comm() {
     socket.on("game infos", function (infos) {
         newDessinateurs(infos.dessinateurs);
         wordToFind.textContent = infos.mot;
-        for (let elem of playersList.children) {
-            if (infos.vainqueurs.includes(elem.getAttribute("id"))) {
-                elem.style.backgroundColor = bgVainqueurColor;
-            }
-        }
+        scores = infos.scores;
+        console.log("game infos");
+        console.log(scores);
+        updateListScores();
         zoneDessin();
     });
     
     socket.on("stoc user list", function (list) {
-        userList(list.users);
-        for (let elem of playersList.children) {
-            if (list.vainqueurs.includes(elem.getAttribute("id"))) {
-                elem.style.backgroundColor = bgVainqueurColor;
-            }
-        }
+        userList(list);
     });
     
     socket.on("stoc chat stack", function (stack) {
@@ -617,6 +615,8 @@ function socket_comm() {
 
     socket.on('new score', function(new_scores) {
         scores = new_scores;
+        console.log("new score");
+        console.log(scores);
         updateListScores();
     });
     
@@ -742,6 +742,7 @@ function socket_comm() {
         leMot.appendChild(document.createTextNode(mot));
     })
     
+    // Nouveau mot à deviner, et donc début du tour de jeu !
     socket.on("word to guess", function (info) {
         container.innerHTML = "";
         zoneDessin();
@@ -758,6 +759,11 @@ function socket_comm() {
             }
             compteur.textContent = "" + seconds;
         }, 1000);
+    });
+
+    // Pour les dessinateurs, le mot qu'il fallait deviner.
+    socket.on("word guessed", function (mot) {
+        wordToFind.textContent = mot;
     });
 }
 
@@ -903,7 +909,7 @@ function waitingScreen(roomID, owner) {
 
     socket.on("stoc user list", function (list) {
         usersConnected = list.users; 
-        userList(list.users);
+        userList(list);
     });
 }
 

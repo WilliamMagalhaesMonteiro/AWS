@@ -174,8 +174,10 @@ function gameServer(roomPath) {
         }
     }
 
-    // Indique si le jeu est en cours (=> si il y a au moins 2 joueurs connectés)
+    // Indique si le jeu est en cours
     var game = false;
+    // Indique si un tour de jeu est en cours
+    var round = false;
     // Indique le joueur qui dessine (tous les autres devinent)
     var id_dessineur = 0;
 
@@ -208,6 +210,7 @@ function gameServer(roomPath) {
     }
 
     function marquer_points() {
+        round = false;
         for (let user of usrs_dessinateurs) {
             points_marques.set(user, users_vainqueurs.length);
         }
@@ -231,7 +234,10 @@ function gameServer(roomPath) {
             clearTimeout(timeout);
         }
         users_vainqueurs = [];
-        // Le dessin est effacé !
+    
+        // On donne le mot aux joueurs qui n'ont pas deviné
+        ioNsp.to(roomDevinateurs).emit("word guessed", game_mot);
+        // Le dessin est effacé
         suppression();
         ioNsp.emit("stoc delete");
 
@@ -283,7 +289,9 @@ function gameServer(roomPath) {
         users.push(username);
         sockets.push(socket);
 
-        scores.set(username, 0);
+        if (!scores.get(username)) {
+            scores.set(username, 0);
+        }
 
         ioNsp.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
 
@@ -293,7 +301,8 @@ function gameServer(roomPath) {
 
         if (game) {
             // Le joueur devient un nouveau devinateur.
-            socket.emit("game infos", { dessinateur: usrs_dessinateurs, mot: game_mot_cache, vainqueurs: users_vainqueurs });
+            socket.emit("game infos", { dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
+                vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({ name, value })) });
             socket.join(roomDevinateurs);
             socket.emit("stoc game start");
         }
@@ -332,6 +341,7 @@ function gameServer(roomPath) {
             }
             ioNsp.to(roomDevinateurs).emit("word to guess", {mot: game_mot_cache, duree: duree_round});
             ioNsp.to(roomDessinateurs).emit("word to guess", {mot: game_mot, duree: duree_round});
+            round = true;
             timeout = setTimeout(function() {
                 marquer_points();
                 nouveau_tour();
