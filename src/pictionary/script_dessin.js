@@ -603,6 +603,7 @@ function socket_comm() {
             seconds--;
             if (seconds === 0) {
                 clearInterval(intervalle);
+                intervalle = null;
             }
             compteur.textContent = "" + seconds;
         }, 1000);
@@ -772,6 +773,7 @@ function socket_comm() {
             seconds--;
             if (seconds === 0) {
                 clearInterval(intervalle);
+                intervalle = null;
             }
             compteur.textContent = "" + seconds;
         }, 1000);
@@ -781,10 +783,46 @@ function socket_comm() {
     socket.on("word guessed", function (mot) {
         wordToFind.textContent = mot;
     });
+
+    socket.on("stoc fin de partie", function (owner) {
+        if(intervalle) {
+            clearInterval(intervalle);
+            intervalle = null;
+        }
+        finDePartie(owner);
+    });
+
+    socket.on("disconnect", function () {
+        location.reload();
+    });
 }
 
+function finDePartie(owner) {
+    usersDessinateurs = [];
 
-function tentativeDeCo(roomID, owner) {
+    container.innerHTML = "";
+
+    const titre = document.createElement("h1");
+    titre.textContent = "Fin de la partie !";
+    const infoGagnant = document.createElement("p");
+    infoGagnant.textContent = "vainqueur : ";
+    const nomGagnant = document.createElement("b");
+    const gagnant = (scores.length > 0 ? scores[0].name : "?") + " !";
+    nomGagnant.appendChild(document.createTextNode(gagnant));
+    infoGagnant.appendChild(nomGagnant);
+    container.appendChild(titre);
+    container.appendChild(infoGagnant);
+
+    if (owner === username) {
+        boutonsWaitingRoom();
+    } else {
+        socket.on("stoc game start", function () {
+            zoneDessin();
+        });
+    }
+}
+
+function tentativeDeCo(roomID, isOwner) {
     socket = io(roomID, {query: {username: username}});
 
     socket.on('connect_error', () => {
@@ -798,7 +836,7 @@ function tentativeDeCo(roomID, owner) {
 
     socket.on("connect", () => {
         socket_comm();
-        waitingScreen(roomID, owner);
+        waitingScreen(roomID, isOwner);
     });
 }
 
@@ -815,12 +853,86 @@ function outFunc() {
     span.innerHTML = "Copier le code";
 }
 
-function waitingScreen(roomID, owner) {
+function paramsRange(div, input, val, name, labelText, min, max, value) {
+    val.appendChild(document.createTextNode("" + value));
+
+    let label = document.createElement("label");
+    label.setAttribute("for", name);
+    label.textContent = labelText;
+    container.appendChild(label);
+
+    input.setAttribute("type", "range");
+    input.setAttribute("name", name);
+    input.setAttribute("min", "" + min);
+    input.setAttribute("max", "" + max);
+    input.setAttribute("value", "" + value);
+
+    const minG = document.createElement("b");
+    minG.appendChild(document.createTextNode("" + min));
+
+    const maxG = document.createElement("b");
+    maxG.appendChild(document.createTextNode("" + max));
+
+    div.appendChild(minG);
+    div.appendChild(input);
+    div.appendChild(maxG);
+}
+
+function boutonsWaitingRoom() {
+    let inputDess = document.createElement("input");
+    const inputDivDess = document.createElement("div");
+    inputDivDess.setAttribute("id", "choix-dessinateurs");
+    const valDessG = document.createElement("b");
+    paramsRange(inputDivDess, inputDess, valDessG, "dessinateurs", "Nombre de dessinateurs : ", 1, 7, 1);
+    container.appendChild(inputDivDess);
+    container.appendChild(valDessG);
+
+    let inputRound = document.createElement("input");
+    const inputDivRound = document.createElement("div");
+    inputDivRound.setAttribute("id", "choix-rounds");
+    const valRoundG = document.createElement("b");
+    paramsRange(inputDivRound, inputRound, valRoundG, "rounds", "Nombre de tours : ", 1, 10, 4);
+    container.appendChild(inputDivRound);
+    container.appendChild(valRoundG);
+
+    let boutonStart = document.createElement("button");
+
+    boutonStart.textContent = "Démarrer la partie";
+    container.appendChild(boutonStart);
+
+    inputDess.addEventListener("input", function() {
+        valDessG.innerHTML = "";
+        valDessG.appendChild(document.createTextNode(inputDess.value));
+    });
+
+    inputRound.addEventListener("input", function() {
+        valRoundG.innerHTML = "";
+        valRoundG.appendChild(document.createTextNode(inputRound.value));
+    });
+    
+    boutonStart.addEventListener("click", function () {
+        if (users.length < 2) {
+            alert("Nombre de joueurs insufisant.");
+            return;
+        }
+        let inputDessValue = parseInt(inputDess.value);
+        if (inputDessValue > users.length - 1) {
+            alert("Trop de dessinateurs.");
+            return;
+        }
+        let inputRoundValue = parseInt(inputRound.value);
+
+        socket.emit("ctos game start", {dessinateurs: inputDessValue, rounds: inputRoundValue});
+        zoneDessin();
+    });
+}
+
+function waitingScreen(roomID, isOwner) {
     container.innerHTML = "";
 
-    let usersConnected = [username];
+    users = [username];
 
-    if (owner) {
+    if (isOwner) {
         let divCodeCopier = document.createElement("div");
         divCodeCopier.setAttribute("id", "code-copie");
 
@@ -834,7 +946,6 @@ function waitingScreen(roomID, owner) {
 
         divCodeCopier.appendChild(titre);
         divCodeCopier.appendChild(texteCode);
-
 
         let boutonDiv = document.createElement("div");
         boutonDiv.setAttribute("id", "bouton-copie-div");
@@ -856,61 +967,7 @@ function waitingScreen(roomID, owner) {
         divCodeCopier.appendChild(boutonDiv);
         container.appendChild(divCodeCopier);
 
-        let label = document.createElement("label");
-        label.setAttribute("for", "range");
-        label.textContent = "Nombre de dessinateurs : ";
-        container.appendChild(label);
-
-        let input = document.createElement("input");
-        input.setAttribute("type", "range");
-        input.setAttribute("id", "range");
-        input.setAttribute("name", "range");
-        input.setAttribute("min", "1");
-        input.setAttribute("max", "8");
-        input.setAttribute("value", "1");
-
-        const inputDiv = document.createElement("div");
-        inputDiv.setAttribute("id", "choix-dessinateurs");
-
-        const minG = document.createElement("b");
-        minG.appendChild(document.createTextNode("1"));
-
-        const maxG = document.createElement("b");
-        maxG.appendChild(document.createTextNode("7"));
-
-        const valG = document.createElement("b");
-        valG.appendChild(document.createTextNode("1"));
-
-        inputDiv.appendChild(minG);
-        inputDiv.appendChild(input);
-        inputDiv.appendChild(maxG);
-
-        container.appendChild(inputDiv);
-        container.appendChild(valG);
-
-        let boutonStart = document.createElement("button");
-
-        boutonStart.textContent = "Démarrer la partie";
-        container.appendChild(boutonStart);
-
-        input.addEventListener("input", function() {
-            valG.innerHTML = "";
-            valG.appendChild(document.createTextNode(range.value));
-        });
-        
-        boutonStart.addEventListener("click", function () {
-            if (usersConnected.length < 2) {
-                alert("Nombre de joueurs insufisant.");
-                return;
-            }
-            let inputValue = parseInt(input.value);
-            if (inputValue > usersConnected.length - 1) {
-                alert("Trop de dessinateurs.");
-                return;
-            }
-            socket.emit("ctos game start", inputValue);
-            zoneDessin();
-        });
+        boutonsWaitingRoom();
     } else {
         let titre = document.createElement("p");
         titre.textContent = "En attente de joueurs...";
@@ -921,7 +978,7 @@ function waitingScreen(roomID, owner) {
     }
 
     socket.on("stoc user list", function (list) {
-        usersConnected = list.users; 
+        users = list.users; 
         userList(list);
     });
 }

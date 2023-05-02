@@ -157,10 +157,13 @@ function gameServer(roomPath) {
 
     var sockets = [];   // liste des sockets connectés au serveur
     var users = []; // liste des noms des utilisateurs connectés
+    var owner = null; // l'utilisateur qui a créé la room
     var game_mot = ""; // le mot que les dessinateurs doivent faire deviner
     var game_mot_cache = ""; // le mot que les autres voients (des '_ _ _ ...')
     var usrs_dessinateurs = []; // la liste des utilisateurs qui dessinent
-    var nb_ready = 0;
+    var nb_ready = 0; // le nombre de dessinateurs qui sont prêts à commencer
+    var tour_de_jeu = 0; // compteur de tours ()
+    var nb_tours_de_jeu = 1;
 
     var nb_dessinateurs = 1; // le nombre d'utilisateurs qui dessinent en même temps
     var users_vainqueurs = []; // liste des utilisateurs qui on deviné le mot
@@ -181,7 +184,7 @@ function gameServer(roomPath) {
     // Indique si un tour de jeu est en cours
     var round = false;
     // Indique le joueur qui dessine (tous les autres devinent)
-    var id_dessineur = 0;
+    var id_dessineur = -1;
 
     // Deux rooms : une où se trouvent le ou les dessinateurs, une où se trouvent ceux qui devinent.
     const roomDevinateurs = "roomDev";
@@ -205,6 +208,10 @@ function gameServer(roomPath) {
 
     function ajouterScore(value, key) {
         scores.set(key, scores.get(key) + value);
+    }
+
+    function scoreZero(value, key) {
+        scores.set(key, 0);
     }
 
     function compareScore(a, b) {
@@ -231,6 +238,14 @@ function gameServer(roomPath) {
         points_marques.clear();
     }
 
+    function reset_game_info() {
+        game = false;
+        round = false;
+        nb_ready = 0;
+        id_dessineur = -1;
+        scores.forEach(scoreZero);
+    }
+
     function nouveau_tour() {
         if (timeout) {
             clearTimeout(timeout);
@@ -243,11 +258,21 @@ function gameServer(roomPath) {
         suppression();
         ioNsp.emit("stoc delete");
 
+        // Un des dessinateurs est choisit de façon cyclique
+        id_dessineur++;
+        if (id_dessineur >= users.length) {
+            id_dessineur = 0;
+            tour_de_jeu++;
+            if (tour_de_jeu >= nb_tours_de_jeu) {
+                reset_game_info();
+                ioNsp.emit("stoc fin de partie", users.includes(owner) ? owner : users[0]);
+                return;
+            }
+        }
+        usrs_dessinateurs = [users[id_dessineur]];
+
         nouveau_mot();
 
-        // Un des dessinateurs est choisit de façon cyclique
-        id_dessineur = (id_dessineur + 1) % users.length;
-        usrs_dessinateurs = [users[id_dessineur]];
         // Les autres sont aléatoires
         for (var i = 1; i < nb_dessinateurs && i < users.length - 1; i++) {
             let new_dessinateur;
@@ -278,10 +303,8 @@ function gameServer(roomPath) {
     }
 
     function reset() {
-        game = false;
-        round = false;
+        reset_game_info();
         usersDessinateurs = [];
-        nb_ready = 0;
         users_vainqueurs = [];
         timeout = null;
         instantDebut = null;
@@ -309,8 +332,12 @@ function gameServer(roomPath) {
 
         // Le nom d'utilisateur du nouveau client est enregistré ici (comme dans squid game).
         const username = socket.handshake.query.username;
+        // Le premier qui se connecte est l'owner
+        if (!owner) {
+            owner = username;
+        }
 
-        if (users.includes(username) || users.length >= 8) {
+        if (users.includes(username) || users.length >= 7) {
             // Un utilisateur ne peut se connecter qu'une seule fois, et le nombre max de joueurs est de 8.
             socket.disconnect();
             return;
@@ -369,8 +396,13 @@ function gameServer(roomPath) {
             }
         });
 
-        socket.on("ctos game start", function (nbDess) {
-            nb_dessinateurs = nbDess;
+
+        socket.on("ctos game start", function (infos) {
+            scores.forEach(scoreZero);
+            var arrayScores = Array.from(scores, ([name, value]) => ({name, value}));
+            ioNsp.emit("new score", arrayScores);
+            nb_dessinateurs = infos.dessinateurs;
+            nb_tours_de_jeu = infos.rounds;
             socket.broadcast.emit("stoc game start");
             game = true;
             nouveau_tour();
@@ -447,6 +479,7 @@ function gameServer(roomPath) {
                     socket.leave(roomDevinateurs);
                     users_vainqueurs.push(username);
                     ioNsp.emit('correct guess', username);
+                    socket.emit("word guessed", game_mot);
                     chat_stack.push({ user: username, text: username + " a deviné le mot !", bool: true });
                     points_marques.set(username, users.length - usrs_dessinateurs.length - users_vainqueurs.length + 1);
 
