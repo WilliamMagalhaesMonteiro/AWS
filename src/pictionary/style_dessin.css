@@ -132,6 +132,10 @@ body {
     margin-top: 1.5rem;
 }
 
+#div-validations {
+    height: 1rem;
+}
+
 #div-boutons {
     margin-top: 2rem;
 }

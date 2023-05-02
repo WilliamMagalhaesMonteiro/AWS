@@ -597,6 +597,15 @@ function socket_comm() {
         console.log(scores);
         updateListScores();
         zoneDessin();
+        seconds = infos.temps_restant;
+        var compteur = document.getElementById("counter");
+        intervalle = setInterval(function() {
+            seconds--;
+            if (seconds === 0) {
+                clearInterval(intervalle);
+            }
+            compteur.textContent = "" + seconds;
+        }, 1000);
     });
     
     socket.on("stoc user list", function (list) {
@@ -711,26 +720,23 @@ function socket_comm() {
             container.appendChild(titre);
     
             const boutonValider = document.createElement("button");
-            boutonValider.textContent = "Valider";
+            boutonValider.textContent = "Commencer";
             container.appendChild(boutonValider);
-    
-            const boutonNouveau = document.createElement("button");
-            boutonNouveau.textContent = "Nouveau mot";
-            container.appendChild(boutonNouveau);
-    
-            boutonValider.addEventListener("click", function () {
-                socket.emit("ctos word chosen");
+            
+            const divVotes = document.createElement("div");
+            divVotes.setAttribute("id", "div-validations");
+            container.appendChild(divVotes);
+
+            boutonValider.addEventListener("click", function listener () {
+                socket.emit("ctos commencer");
+                boutonValider.style.backgroundColor = "#90b800";
+                boutonValider.removeEventListener("click", listener);
             });
-    
-            boutonNouveau.addEventListener("click", function () {
-                socket.emit("ctos nouveau mot");
-            });
-    
         } else {
             let titre = document.createElement("p");
             const texteGras = document.createElement("b");
             texteGras.appendChild(document.createTextNode(usersDessinateurs.length > 1
-                ? "Les dessinateurs choisissent un mot..." : "Le dessinateur choisit un mot..."));
+                ? "En attente des dessinateurs..." : "En attente du dessinateur..."));
             titre.appendChild(texteGras);
             container.appendChild(titre);
         }
@@ -740,10 +746,20 @@ function socket_comm() {
         const leMot = document.getElementById("proposition-mot");
         leMot.innerHTML = "";
         leMot.appendChild(document.createTextNode(mot));
-    })
+    });
+
+    socket.on("stoc nb ready", function (nb) {
+        const divVotes = container.querySelector("#div-validations");
+        divVotes.innerHTML = "";
+        for (let i = 0; i < nb; i++) {
+            const check = document.createElement("img");
+            check.setAttribute("src", "images/check.png");
+            divVotes.appendChild(check);
+        }
+    });
     
     // Nouveau mot à deviner, et donc début du tour de jeu !
-    socket.on("word to guess", function (info) {
+    socket.on("stoc round start", function (info) {
         container.innerHTML = "";
         zoneDessin();
         wordToFind.textContent = info.mot;
@@ -805,7 +821,6 @@ function waitingScreen(roomID, owner) {
     let usersConnected = [username];
 
     if (owner) {
-
         let divCodeCopier = document.createElement("div");
         divCodeCopier.setAttribute("id", "code-copie");
 
@@ -861,7 +876,7 @@ function waitingScreen(roomID, owner) {
         minG.appendChild(document.createTextNode("1"));
 
         const maxG = document.createElement("b");
-        maxG.appendChild(document.createTextNode("8"));
+        maxG.appendChild(document.createTextNode("7"));
 
         const valG = document.createElement("b");
         valG.appendChild(document.createTextNode("1"));
@@ -873,7 +888,6 @@ function waitingScreen(roomID, owner) {
         container.appendChild(inputDiv);
         container.appendChild(valG);
 
-        
         let boutonStart = document.createElement("button");
 
         boutonStart.textContent = "Démarrer la partie";
@@ -897,7 +911,6 @@ function waitingScreen(roomID, owner) {
             socket.emit("ctos game start", inputValue);
             zoneDessin();
         });
-
     } else {
         let titre = document.createElement("p");
         titre.textContent = "En attente de joueurs...";

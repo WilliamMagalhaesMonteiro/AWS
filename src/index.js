@@ -160,12 +160,14 @@ function gameServer(roomPath) {
     var game_mot = ""; // le mot que les dessinateurs doivent faire deviner
     var game_mot_cache = ""; // le mot que les autres voients (des '_ _ _ ...')
     var usrs_dessinateurs = []; // la liste des utilisateurs qui dessinent
+    var nb_ready = 0;
 
     var nb_dessinateurs = 1; // le nombre d'utilisateurs qui dessinent en même temps
     var users_vainqueurs = []; // liste des utilisateurs qui on deviné le mot
 
     var duree_round = 60;   // durée en seconde des rounds
     var timeout = null; // ref vers la fonction en attente qui s'exécute quand le temps est écoulé
+    var instantDebut = null;
 
     function clearPrev() {
         if (effSize < draw_stack.length) {
@@ -250,11 +252,11 @@ function gameServer(roomPath) {
         for (var i = 1; i < nb_dessinateurs && i < users.length - 1; i++) {
             let new_dessinateur;
             do {
-                new_dessinateur = users[getRandomInt(usrs_dessinateurs.length - 1)];
+                new_dessinateur = users[getRandomInt(users.length - 1)];
             } while (usrs_dessinateurs.includes(new_dessinateur));
             usrs_dessinateurs.push(new_dessinateur);
         }
-
+        nb_ready = 0;
         ioNsp.emit("stoc dessinateur", usrs_dessinateurs);
         for (let socket of sockets) {
             if (usrs_dessinateurs.includes(socket.handshake.query.username)) {
@@ -273,6 +275,33 @@ function gameServer(roomPath) {
         ioNsp.emit('chat message', { user: "", text: msg, bool: true });
         chat_stack.push({ user: "", text: msg, bool: true });
         ioNsp.to(roomDessinateurs).emit("stoc nouveau mot", game_mot);
+    }
+
+    function reset() {
+        game = false;
+        round = false;
+        usersDessinateurs = [];
+        nb_ready = 0;
+        users_vainqueurs = [];
+        timeout = null;
+        instantDebut = null;
+        suppression();
+    }
+
+    function round_start() {
+        game_mot_cache = "";
+        // remplacer les lettres du mots par des '_' pour les devinateurs
+        for (let c of game_mot) {
+            game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
+        }
+        ioNsp.to(roomDevinateurs).emit("stoc round start", {mot: game_mot_cache, duree: duree_round});
+        ioNsp.to(roomDessinateurs).emit("stoc round start", {mot: game_mot, duree: duree_round});
+        round = true;
+        instantDebut = Date.now();
+        timeout = setTimeout(function() {
+            marquer_points();
+            nouveau_tour();
+        }, 1000 * (duree_round + 1));
     }
 
     // Nouvelle connexion.
@@ -301,10 +330,12 @@ function gameServer(roomPath) {
 
         if (game) {
             // Le joueur devient un nouveau devinateur.
-            socket.emit("game infos", { dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
-                vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({ name, value })) });
-            socket.join(roomDevinateurs);
             socket.emit("stoc game start");
+            socket.emit("game infos", { dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
+                vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({name, value})),
+                temps_restant: Math.floor((Date.now() - instantDebut) / 1000)});
+            socket.join(roomDevinateurs);
+            
         }
 
         socket.on("disconnect", function () {
@@ -313,6 +344,7 @@ function gameServer(roomPath) {
             socket.broadcast.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
             if (game) {
                 if (users.length < 2) {
+                    reset();
                     ioNsp.emit("stoc dessinateur", []);
                     // user vide pour indiquer que le jeu s'arrête
                 } else {
@@ -328,24 +360,13 @@ function gameServer(roomPath) {
             }
         });
 
-        socket.on("ctos nouveau mot", function () {
-            nouveau_mot();
-            ioNsp.to(roomDessinateurs).emit("stoc nouveau mot", game_mot);
-        });
-
-        socket.on("ctos word chosen", function () {
-            game_mot_cache = "";
-            // remplacer les lettres du mots par des '_' pour les devinateurs
-            for (let c of game_mot) {
-                game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
+        socket.on("ctos commencer", function () {
+            nb_ready++;
+            if (nb_ready >= usrs_dessinateurs.length) {
+                round_start();
+            } else {
+                ioNsp.to(roomDessinateurs).emit("stoc nb ready", nb_ready);
             }
-            ioNsp.to(roomDevinateurs).emit("word to guess", {mot: game_mot_cache, duree: duree_round});
-            ioNsp.to(roomDessinateurs).emit("word to guess", {mot: game_mot, duree: duree_round});
-            round = true;
-            timeout = setTimeout(function() {
-                marquer_points();
-                nouveau_tour();
-            }, 1000 * (duree_round + 1));
         });
 
         socket.on("ctos game start", function (nbDess) {
