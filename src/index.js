@@ -3,6 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const pug = require('pug');
+const { createHash } = require('crypto');
 
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -61,7 +62,8 @@ app.get('/register', function (req, res) {
 app.post('/register', function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
-    if (username && password) {
+    let hash = createHash('sha256').update(password).digest('hex');
+    if (username && hash) {
         // Vraiment la base de la base avec les failles qui vont avec
         connection.query("select * from comptes where username = ?;", [username], function (error, results) {
             if (error) {
@@ -71,7 +73,9 @@ app.post('/register', function (req, res) {
             if (results.length > 0) {
                 return res.render('register', { message: "Nom d'utilisateur déjà utilisé.", username: username });
             }
-            connection.query("insert into comptes (username, password) values (?, ?);", [username, password], function (error2, r) {
+            connection.query("insert into comptes (username, password) values (?, ?);", [username, hash], function (error2, r) {
+                
+
                 if (error2) {
                     console.log(error2);
                     return res.render('register', { message: "Une erreur est survenue.", username: username });
@@ -87,9 +91,11 @@ app.post('/register', function (req, res) {
 app.post('/auth', function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
-    if (username && password) {
+    let hash = createHash('sha256').update(password).digest('hex');
+
+    if (username && hash) {
         // Vraiment la base de la base avec les failles qui vont avec
-        connection.query("select * from comptes where username = ? and password = ?;", [username, password], function (error, results) {
+        connection.query("select * from comptes where username = ? and password = ?;", [username, hash], function (error, results) {
             if (error) {
                 console.log(error);
                 return res.render('login', { message: "Une erreur est survenue.", username: username });
