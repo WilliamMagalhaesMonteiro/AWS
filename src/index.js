@@ -23,7 +23,8 @@ connection.query(
             }
         }
     }
-)
+);
+
 const port_socket = 3000;
 const app = express();
 const http = require('http');
@@ -35,11 +36,16 @@ const server = http
 
 app.set("view engine", "pug");
 
-app.use(session({
-    secret: 's157H9h7a6QHdfk1HFGdqf7re86w9GFlkfhk',
+const dotenv = require('dotenv');
+dotenv.config();
+
+const sessionMiddleware = session({
+    secret: process.env.SESSION_SECRET,
     resave: true,
     saveUninitialized: true
-}));
+});
+
+app.use(sessionMiddleware);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -74,8 +80,6 @@ app.post('/register', function (req, res) {
                 return res.render('register', { message: "Nom d'utilisateur déjà utilisé.", username: username });
             }
             connection.query("insert into comptes (username, password) values (?, ?);", [username, hash], function (error2, r) {
-                
-
                 if (error2) {
                     console.log(error2);
                     return res.render('register', { message: "Une erreur est survenue.", username: username });
@@ -103,7 +107,6 @@ app.post('/auth', function (req, res) {
             if (results.length > 0) {
                 req.session.loggedin = true;
                 req.session.username = username;
-                res.cookie('name', req.session.username);
                 return res.redirect('/pictionary');
             }
             // Rendu de la page d'authentification avec des trucs à afficher en plus !
@@ -112,25 +115,24 @@ app.post('/auth', function (req, res) {
     }
 });
 
-function pictionaryGetVerifAuth(req, res, next) {
+function getVerifAuth(req, res, next) {
     if (req.session.loggedin) {
         return next();
     } else {
-        res.send('Please login to view this page!');
+        res.redirect('/auth');
     }
     res.end();
 }
 
 app.use(express.static(path.join(__dirname, 'pictionary')));
 
-app.get('/pictionary', pictionaryGetVerifAuth, function (req, res) {
+app.get('/pictionary', getVerifAuth, function (req, res) {
     res.sendFile(path.join(__dirname, 'pictionary', 'index.html'));
-    // Le cookie est modifié pour ajouter le nom d'uilisteur, récupéré dans le script du pictionary côté client par la suite.
 });
 
 var rooms = [];
 
-app.get('/new-room', function (req, res) {
+app.get('/new-room', getVerifAuth, function (req, res) {
     let roomId;
     do {
         roomId = "/" + (Math.random() + 1).toString(36).substring(7);
@@ -142,6 +144,8 @@ app.get('/new-room', function (req, res) {
 
 const { Server } = require("socket.io");
 const io = new Server(server);
+// Utilisation du middleware de session pour l'authentification
+io.engine.use(sessionMiddleware);
 
 function removeFromTab(tab, elem) {
     const index = tab.indexOf(elem);
@@ -161,7 +165,6 @@ function gameServer(roomPath) {
     var scores = new Map(); // socres totaux des joueurs
     var points_marques = new Map(); // points marqués lors du tour
 
-    var sockets = [];   // liste des sockets connectés au serveur
     var users = []; // liste des noms des utilisateurs connectés
     var owner = null; // l'utilisateur qui a créé la room
     var game_mot = ""; // le mot que les dessinateurs doivent faire deviner
@@ -289,13 +292,13 @@ function gameServer(roomPath) {
         }
         nb_ready = 0;
         ioNsp.emit("stoc dessinateur", usrs_dessinateurs);
-        for (let socket of sockets) {
-            if (usrs_dessinateurs.includes(socket.handshake.query.username)) {
-                socket.leave(roomDevinateurs);
-                socket.join(roomDessinateurs);
+        for (let entry of ioNsp.sockets.entries()) {
+            if (usrs_dessinateurs.includes(entry[1].request.session.username)) {
+                entry[1].leave(roomDevinateurs);
+                entry[1].join(roomDessinateurs);
             } else {
-                socket.join(roomDevinateurs);
-                socket.leave(roomDessinateurs);
+                entry[1].join(roomDevinateurs);
+                entry[1].leave(roomDessinateurs);
             }
         }
         let msg = "Au tour de ";
@@ -337,19 +340,20 @@ function gameServer(roomPath) {
     ioNsp.on("connection", function (socket) {
 
         // Le nom d'utilisateur du nouveau client est enregistré ici (comme dans squid game).
-        const username = socket.handshake.query.username;
-        // Le premier qui se connecte est l'owner
-        if (!owner) {
-            owner = username;
-        }
+        const username = socket.request.session.username;
 
+        // Le premier qui se connecte est l'owner
         if (users.includes(username) || users.length >= 7) {
             // Un utilisateur ne peut se connecter qu'une seule fois, et le nombre max de joueurs est de 8.
             socket.disconnect();
             return;
         }
+
+        socket.emit("username", username);
+        if (!owner) {
+            owner = username;
+        }
         users.push(username);
-        sockets.push(socket);
 
         if (!scores.get(username)) {
             scores.set(username, 0);
@@ -373,7 +377,6 @@ function gameServer(roomPath) {
 
         socket.on("disconnect", function () {
             removeFromTab(users, username);
-            removeFromTab(sockets, socket);
             socket.broadcast.emit("stoc user list", { users: users, vainqueurs: users_vainqueurs });
             if (game) {
                 if (users.length < 2) {
@@ -390,6 +393,7 @@ function gameServer(roomPath) {
             if (users.length === 0) {
                 // Le namespace est supprimé si tout le monde part...
                 io._nsps.delete(roomPath);
+                removeFromTab(rooms, roomPath);
             }
         });
 

@@ -18,18 +18,8 @@ const playersList = document.getElementById("players-list");
 const wordToFind = document.getElementById("word-to-find");
 
 var messages = document.getElementById('chat-messages');
-var form = document.getElementById('chat-form');
+const chatForm = document.getElementById('chat-form');
 const input = document.getElementById('chat-input');
-
-form.addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (input.value) {
-        var texte = input.value;
-        socket.emit('chat message', texte);
-        newChatMessage({user: username, text: texte, bool: false});
-        input.value = '';
-    }
-});
 
 // La gestion des événements de base, ceux du pinceau et de la gomme.
 function traitsBinds() {
@@ -562,17 +552,7 @@ redoImg.addEventListener('click', function () {
 
 });
 
-function nameFromCookie(cookie) {
-    let str = cookie.split(";");
-    for (let s of str) {
-        let ts = s.trim();
-        if (ts.startsWith("name=")) {
-            return ts.replace("name=", "");
-        }
-    }
-}
-
-const username = nameFromCookie(document.cookie);
+var username = '';
 
 function zoneDessin() {
     container.innerHTML = "";
@@ -589,6 +569,22 @@ function zoneDessin() {
 var intervalle = null;
 
 function socket_comm() {
+
+    // Le serveur nous envoir notre nom d'utilisateur oui oui
+    socket.on("username", function (name) {
+        username = name;
+    });
+
+    chatForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        if (input.value) {
+            var texte = input.value;
+            socket.emit('chat message', texte);
+            newChatMessage({user: username, text: texte, bool: false});
+            input.value = '';
+        }
+    });
+
     socket.on("game infos", function (infos) {
         newDessinateurs(infos.dessinateurs);
         wordToFind.textContent = infos.mot;
@@ -823,7 +819,7 @@ function finDePartie(owner) {
 }
 
 function tentativeDeCo(roomID, isOwner) {
-    socket = io(roomID, {query: {username: username}});
+    socket = io(roomID);
 
     socket.on('connect_error', () => {
         let titre = document.createElement("p");

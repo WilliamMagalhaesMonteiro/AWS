@@ -12,6 +12,14 @@
 
 `pug`
 
+`dotenv`
+
+# Important
+
+'dotenv' lit un fichier '.env' et s'en sert pour créer des variables d'environnement.
+
+Il faut créer un fichier '.env' et mettre dedans "SESSION_SECRET=[une chaine de caractères aléatoire]"
+
 # Installer et lancer mysql dans ubuntu
 
 `sudo apt install mysql-server`
