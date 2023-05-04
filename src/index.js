@@ -275,6 +275,7 @@ function gameServer(roomPath) {
     function nouveau_tour() {
         if (timeout) {
             clearTimeout(timeout);
+            timeout = null;
         }
         users_vainqueurs = [];
 
@@ -329,10 +330,13 @@ function gameServer(roomPath) {
     }
 
     function reset() {
+        if (timeout) {
+            clearTimeout(timeout);
+            timeout = null;
+        }
         reset_game_info();
         usersDessinateurs = [];
         users_vainqueurs = [];
-        timeout = null;
         instantDebut = null;
         suppression();
         ioNsp.emit("stoc fin de partie", users.includes(owner) ? owner : users[0]);
