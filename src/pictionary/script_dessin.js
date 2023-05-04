@@ -822,12 +822,22 @@ function tentativeDeCo(roomID, isOwner) {
     socket = io(roomID);
 
     socket.on('connect_error', () => {
-        let titre = document.createElement("p");
-        const texteGras = document.createElement("b");
-        texteGras.appendChild(document.createTextNode("Partie introuvable"));
-        titre.appendChild(texteGras);
-        container.appendChild(titre);
-        return;
+        var err_co = document.getElementById("erreur-connexion");
+        if (err_co) {
+            err_co.innerHTML = "";
+        } else {
+            err_co = document.createElement("div");
+            err_co.setAttribute("id", "erreur-connexion");
+            container.appendChild(err_co);
+        }
+        
+        setTimeout(function() {
+            const titre = document.createElement("p");
+            const texteGras = document.createElement("b");
+            texteGras.appendChild(document.createTextNode("Partie introuvable"));
+            titre.appendChild(texteGras);
+            err_co.appendChild(titre);
+        }, 100);
     });
 
     socket.on("connect", () => {

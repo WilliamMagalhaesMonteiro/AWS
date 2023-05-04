@@ -123,6 +123,10 @@ body {
     align-items: center;
 }
 
+#erreur-connexion {
+    height: 1rem;
+}
+
 #drawing-container button {
     background-color: #f8a62a;
     padding: 7px;

@@ -71,13 +71,7 @@ app.post('/register', function (req, res) {
     let password = req.body.password;
     let hash = createHash('sha256').update(password).digest('hex');
     let IV = randomBytes(32).toString("hex");
-
-
-
     let hashIV = hash + IV;
-
-
-
     if (username && hashIV) {
         // Vraiment la base de la base avec les failles qui vont avec
         connection.query("select * from comptes where username = ?;", [username], function (error, results) {
@@ -102,8 +96,6 @@ app.post('/register', function (req, res) {
 // Lorsque l'utilisateur clique sur 'Login'
 // -> http://localhost:3000/auth
 app.post('/auth', function (req, res) {
-
-
     let username = req.body.username;
     let password = req.body.password;
     let hash = createHash('sha256').update(password).digest('hex');
@@ -136,13 +128,8 @@ app.post('/auth', function (req, res) {
                     return res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
                 });
             }
-
         }
     });
-
-
-
-
 });
 
 function getVerifAuth(req, res, next) {
