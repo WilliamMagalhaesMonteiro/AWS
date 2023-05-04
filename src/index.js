@@ -335,6 +335,7 @@ function gameServer(roomPath) {
         timeout = null;
         instantDebut = null;
         suppression();
+        ioNsp.emit("stoc fin de partie", users.includes(owner) ? owner : users[0]);
     }
 
     function round_start() {
@@ -400,8 +401,6 @@ function gameServer(roomPath) {
             if (game) {
                 if (users.length < 2) {
                     reset();
-                    ioNsp.emit("stoc dessinateur", []);
-                    // user vide pour indiquer que le jeu s'arrête
                 } else {
                     if (usrs_dessinateurs.includes(username)) {
                         // Un dessinateur s'est déconnecté !
