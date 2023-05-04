@@ -4,6 +4,7 @@ const session = require('express-session');
 const path = require('path');
 const pug = require('pug');
 const { createHash } = require('crypto');
+const { randomBytes } = require('crypto');
 
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -69,7 +70,15 @@ app.post('/register', function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
     let hash = createHash('sha256').update(password).digest('hex');
-    if (username && hash) {
+    let IV = randomBytes(32).toString("hex");
+
+
+
+    let hashIV = hash + IV;
+
+
+
+    if (username && hashIV) {
         // Vraiment la base de la base avec les failles qui vont avec
         connection.query("select * from comptes where username = ?;", [username], function (error, results) {
             if (error) {
@@ -79,7 +88,7 @@ app.post('/register', function (req, res) {
             if (results.length > 0) {
                 return res.render('register', { message: "Nom d'utilisateur déjà utilisé.", username: username });
             }
-            connection.query("insert into comptes (username, password) values (?, ?);", [username, hash], function (error2, r) {
+            connection.query("insert into comptes (username, password, IV) values (?, ?, ?);", [username, hashIV, IV], function (error2, r) {
                 if (error2) {
                     console.log(error2);
                     return res.render('register', { message: "Une erreur est survenue.", username: username });
@@ -93,26 +102,47 @@ app.post('/register', function (req, res) {
 // Lorsque l'utilisateur clique sur 'Login'
 // -> http://localhost:3000/auth
 app.post('/auth', function (req, res) {
+
+
     let username = req.body.username;
     let password = req.body.password;
     let hash = createHash('sha256').update(password).digest('hex');
+    let IV = '';
+    let hashIV = '';
 
-    if (username && hash) {
-        // Vraiment la base de la base avec les failles qui vont avec
-        connection.query("select * from comptes where username = ? and password = ?;", [username, hash], function (error, results) {
-            if (error) {
-                console.log(error);
-                return res.render('login', { message: "Une erreur est survenue.", username: username });
+    // On récupère l'IV de l'utilisateur
+    connection.query("select iv from comptes where username = ?;", [username], function (error, results) {
+        if (error) {
+            console.log(error);
+            return res.render('login', { message: "Une erreur est survenue.", username: username });
+        }
+        if (results.length > 0) {   // Cet utilisateur existe
+            IV = results[0].iv;
+            hashIV = hash + IV;
+            //Deuxième requête
+            if (username && hashIV) {
+                // Vraiment la base de la base avec les failles qui vont avec
+                connection.query("select * from comptes where username = ? and password = ?;", [username, hashIV], function (error, results) {
+                    if (error) {
+                        console.log(error);
+                        return res.render('login', { message: "Une erreur est survenue.", username: username });
+                    }
+                    if (results.length > 0) {
+                        req.session.loggedin = true;
+                        req.session.username = username;
+                        return res.redirect('/pictionary');
+                    }
+                    // Rendu de la page d'authentification avec des trucs à afficher en plus !
+                    return res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
+                });
             }
-            if (results.length > 0) {
-                req.session.loggedin = true;
-                req.session.username = username;
-                return res.redirect('/pictionary');
-            }
-            // Rendu de la page d'authentification avec des trucs à afficher en plus !
-            return res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
-        });
-    }
+
+        }
+    });
+
+
+
+
 });
 
 function getVerifAuth(req, res, next) {
@@ -260,7 +290,7 @@ function gameServer(roomPath) {
             clearTimeout(timeout);
         }
         users_vainqueurs = [];
-    
+
         // On donne le mot aux joueurs qui n'ont pas deviné
         ioNsp.to(roomDevinateurs).emit("word guessed", game_mot);
         // Le dessin est effacé
@@ -326,11 +356,11 @@ function gameServer(roomPath) {
         for (let c of game_mot) {
             game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
         }
-        ioNsp.to(roomDevinateurs).emit("stoc round start", {mot: game_mot_cache, duree: duree_round});
-        ioNsp.to(roomDessinateurs).emit("stoc round start", {mot: game_mot, duree: duree_round});
+        ioNsp.to(roomDevinateurs).emit("stoc round start", { mot: game_mot_cache, duree: duree_round });
+        ioNsp.to(roomDessinateurs).emit("stoc round start", { mot: game_mot, duree: duree_round });
         round = true;
         instantDebut = Date.now();
-        timeout = setTimeout(function() {
+        timeout = setTimeout(function () {
             marquer_points();
             nouveau_tour();
         }, 1000 * (duree_round + 1));
@@ -368,11 +398,13 @@ function gameServer(roomPath) {
         if (game) {
             // Le joueur devient un nouveau devinateur.
             socket.emit("stoc game start");
-            socket.emit("game infos", { dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
-                vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({name, value})),
-                temps_restant: Math.floor((Date.now() - instantDebut) / 1000)});
+            socket.emit("game infos", {
+                dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
+                vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({ name, value })),
+                temps_restant: Math.floor((Date.now() - instantDebut) / 1000)
+            });
             socket.join(roomDevinateurs);
-            
+
         }
 
         socket.on("disconnect", function () {
@@ -409,7 +441,7 @@ function gameServer(roomPath) {
 
         socket.on("ctos game start", function (infos) {
             scores.forEach(scoreZero);
-            var arrayScores = Array.from(scores, ([name, value]) => ({name, value}));
+            var arrayScores = Array.from(scores, ([name, value]) => ({ name, value }));
             ioNsp.emit("new score", arrayScores);
             nb_dessinateurs = infos.dessinateurs;
             nb_tours_de_jeu = infos.rounds;
