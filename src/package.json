@@ -1,0 +1,32 @@
+{
+  "name": "pictionhary",
+  "version": "1.0.0",
+  "description": "`express`",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "konva": "^9.0.1",
+    "mysql": "^2.18.1",
+    "pug": "^3.0.2",
+    "socket.io": "^4.6.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "start"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WilliamMagalhaesMonteiro/AWS.git"
+  },
+  "keywords": [
+    "dessin"
+  ],
+  "author": "William",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/WilliamMagalhaesMonteiro/AWS/issues"
+  },
+  "homepage": "https://github.com/WilliamMagalhaesMonteiro/AWS#readme"
+}
