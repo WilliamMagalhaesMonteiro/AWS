@@ -1,0 +1,31 @@
+body {
+    background-image: url('fond.png');
+}
+#titre {
+    text-align: center;
+}
+
+#pictionary {
+    height: 150px;
+    width: 645px;
+    image-rendering: pixelated;
+    padding: 5rem;
+}
+
+#boutons {
+    width: 350px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#boutons form input {
+    font-size: 20px;
+    width: 100%;
+    padding: 1rem;
+    margin-top: 3rem;
+    background-color: #ffa24a;
+    border: 5px solid #ff5d12;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 10px;
+}

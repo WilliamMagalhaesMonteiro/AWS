@@ -1,0 +1,281 @@
+* {
+    font-family: -apple-system, BlinkMacSystemFont, "segoe ui", roboto, oxygen, ubuntu, cantarell, "fira sans", "droid sans", "helvetica neue", Arial, sans-serif;
+    font-size: 16px;
+}
+
+body {
+    background-image: url('images/fond.png');
+}
+
+#titre {
+    text-align: center;
+}
+
+#pictionary {
+    height: 100px;
+    width: 430px;
+    image-rendering: pixelated;
+}
+
+#big-container {
+    width: 100%;
+    display: flex;
+}
+
+#chat-container {
+    margin-left: auto;
+    margin-right: 1%;
+    width: 20%;
+    border: 2px solid black;
+    background-color: rgb(243, 243, 243);
+    position: relative;
+}
+
+#chat-form {
+    background: rgba(108, 120, 163, 0.15);
+    padding: 0.25rem;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    height: 2.5rem;
+    box-sizing: border-box;
+    backdrop-filter: blur(10px);
+}
+
+#chat-form input {
+    width: 100%;
+}
+
+#chat-form button {
+    background-color: #2a5fad;
+    cursor: pointer;
+    font-weight: bold;
+    color: #ffffff;
+    padding-bottom: 0.25rem;
+    
+}
+
+#chat-messages {
+    list-style-type: none;
+    margin-bottom: 2.5rem;
+    padding: 0;
+    max-height: 615px;
+    overflow-y: auto;
+}
+
+#chat-messages li {
+    padding: 0.5rem 1rem;
+}
+
+#chat-messages li:nth-child(2n) {
+    background-color: rgb(230, 229, 241);
+}
+
+#top-box {
+    display: flex;
+    align-items: center;
+}
+
+#temps-restant {
+    margin-left: 1rem;
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#word-to-find-box {
+    margin-left: 40vw;
+    text-align: center;
+    background-color: rgba(199, 196, 190, 0.3);
+    padding-top: 1px;
+    padding-bottom: 1px;
+    width: 20rem;
+}
+
+#word-to-find {
+    font-size: 2rem;
+}
+
+#counter {
+    margin-left: 1rem;
+    color: #dd0000;
+    font-size: 2rem;
+}
+
+#middle-container {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#drawing-container {
+    border: 2px solid #000000;
+    height: 600px;
+    width: 1000px;
+    background-color: #f5f5f5;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#erreur-connexion {
+    height: 1rem;
+}
+
+#drawing-container button {
+    background-color: #f8a62a;
+    padding: 7px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 1.5rem;
+}
+
+#div-validations {
+    height: 1rem;
+}
+
+#div-boutons {
+    margin-top: 2rem;
+}
+
+#code-copie {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#code-copie p {
+    margin-right: 10px;
+}
+
+.code-input {
+    border: none;
+    border-radius: 5px;
+    padding: 7px;
+    text-align: center;
+    font-size: 16px;
+    width: 5rem;
+    background-color: #d9dae2;
+    font-weight: bold;
+}
+
+#code-copie button {
+    background-color: #2a5fad;
+    color: white;
+    margin-left: 10px;
+    margin-top: 0;
+}
+
+#choix-dessinateurs b {
+    margin: 0 10px;
+}
+
+#bouton-copie-div {
+    position: relative;
+}
+
+.copie-span {
+    visibility: hidden;
+    background-color: #555;
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    width: 7rem;
+    position: absolute;
+    bottom: 5px;
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+  
+.copie-span::after {
+    content: "";
+    position: absolute;
+}
+  
+#bouton-copie-div:hover .copie-span {
+    visibility: visible;
+    opacity: 1;
+}
+
+#users-container {
+    margin-left: 1%;
+    margin-right: auto;
+    width: 15%;
+    border: 2px solid black;
+    background-color: rgb(187, 187, 187);
+    
+}
+
+.player-rank {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.player-container {
+    display: flex;
+    justify-content: space-between;
+    padding-left: 20px;
+    padding-right: 20px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    margin-left: 5px;
+    border: 4px solid;
+    border-color: transparent;
+}
+
+.align-vertical {  
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.full-height {
+    height: 100%;
+}
+
+.no-margin {
+    margin:0;
+}
+
+#options-dessin {
+    display: flex;
+    flex-direction: row;
+}
+
+#options-dessin #tailles div {
+    align-self: center;
+    margin-left: 2px;
+    margin-top: 2px;
+    background-color: #000000;
+    border: 2px solid;
+    border-color: #000000;
+    border-radius: 100%;
+}
+
+#options-dessin img, .option-group div {
+    margin-left: 2px;
+    margin-top: 4px;
+    border: 2px solid;
+    height: 40px;
+    width: 40px;
+}
+
+#options-dessin img {
+    border-color: #000000;
+    image-rendering: pixelated;
+}
+
+#options-dessin .option-group {
+    display: flex;
+    flex-direction: row;
+}
