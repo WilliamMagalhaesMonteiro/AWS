@@ -1,30 +1,42 @@
-const mysql = require('mysql');
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
-const pug = require('pug');
+require('pug');
 const { createHash } = require('crypto');
 const { randomBytes } = require('crypto');
 
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'admin',
-    password: 'Supermotdepasse',
-    database: 'loginBD'
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("comptes.db", (error) => {
+  if (error) {
+    console.log(error);
+  }
 });
 
-let mots_list = [];
-connection.query(
-    "select mot,theme from mots order by id;",
-    function (err, result) {
-        if (err) throw err;
-        if (Array.isArray(result)) {
-            for (let row of result) {
-                mots_list.push({ mot: row.mot, theme: row.theme });
-            }
-        }
+db.run(
+  "create table if not exists comptes (id integer primary key autoincrement, username varchar(50), password varchar(256), iv varchar(256))",
+  (err) => {
+    if (err) {
+      console.log(err);
     }
+  }
 );
+
+const fs = require("fs");
+const file_mots = "mots.txt";
+let mots_list = [];
+
+fs.readFile(file_mots, "utf8", function(err, data) {
+    if (err) {
+        throw err;
+    }
+    const lines = data.split('\n');
+    lines.forEach(function(line) {
+        const mot = line.trim();
+        if (mot != '') {
+            mots_list.push(mot);
+        }
+    });
+});
 
 const port_socket = 3000;
 const app = express();
@@ -66,70 +78,67 @@ app.get('/register', function (req, res) {
     res.render('register');
 });
 
+// Création d'un nouveau compte.
 app.post('/register', function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
-    let hash = createHash('sha256').update(password).digest('hex');
-    let IV = randomBytes(32).toString("hex");
-    let hashIV = hash + IV;
-    if (username && hashIV) {
-        // Vraiment la base de la base avec les failles qui vont avec
-        connection.query("select * from comptes where username = ?;", [username], function (error, results) {
-            if (error) {
-                console.log(error);
-                return res.render('register', { message: "Une erreur est survenue.", username: username });
+    if (username && password) {
+
+        db.all ("select * from comptes where username = ?", username, (err, rows) => {
+            if (err) {
+                console.log(err);
+                return res.render('login', { message: "Une erreur est survenue.", username: username });
             }
-            if (results.length > 0) {
+            if (rows.length > 0) {
                 return res.render('register', { message: "Nom d'utilisateur déjà utilisé.", username: username });
-            }
-            connection.query("insert into comptes (username, password, IV) values (?, ?, ?);", [username, hashIV, IV], function (error2, r) {
-                if (error2) {
-                    console.log(error2);
-                    return res.render('register', { message: "Une erreur est survenue.", username: username });
-                }
+            } else {
+                let IV = randomBytes(32).toString("hex");
+                let hash = createHash('sha256').update(password + IV).digest('hex');
+                db.run("insert into comptes (username, password, iv) values (?, ?, ?)", [username, hash, IV], (err) => {
+                    if (err) {
+                        console.log(err);
+                        return res.render('login', { message: "Une erreur est survenue.", username: username });
+                    }
+                });
                 return res.redirect('/auth');
-            });
+            }
         });
     }
 });
 
-// Lorsque l'utilisateur clique sur 'Login'
-// -> http://localhost:3000/auth
+// Tentative de connexion avec un nom et un mdp.
 app.post('/auth', function (req, res) {
     let username = req.body.username;
     let password = req.body.password;
-    let hash = createHash('sha256').update(password).digest('hex');
-    let IV = '';
-    let hashIV = '';
 
-    // On récupère l'IV de l'utilisateur
-    connection.query("select iv from comptes where username = ?;", [username], function (error, results) {
-        if (error) {
-            console.log(error);
-            return res.render('login', { message: "Une erreur est survenue.", username: username });
-        }
-        if (results.length > 0) {   // Cet utilisateur existe
-            IV = results[0].iv;
-            hashIV = hash + IV;
-            //Deuxième requête
-            if (username && hashIV) {
-                // Vraiment la base de la base avec les failles qui vont avec
-                connection.query("select * from comptes where username = ? and password = ?;", [username, hashIV], function (error, results) {
-                    if (error) {
-                        console.log(error);
-                        return res.render('login', { message: "Une erreur est survenue.", username: username });
+    const result_iv = db.all("select iv from comptes where username = ?",
+        username, (err, rows) => {
+            if (err) {
+                console.log(err);
+                return res.render('login', { message: "Une erreur est survenue.", username: username });
+            }
+            if (rows.length > 0) {
+                const hash = createHash('sha256').update(password + rows[0].iv).digest('hex');
+                db.all("select * from comptes where username = ? and password = ?",
+                    [username, hash], (err, rows) => {
+                        if (err) {
+                            console.log(err);
+                            return res.render('login', { message: "Une erreur est survenue.", username: username });
+                        }
+                        if (rows.length > 0) {
+                            req.session.loggedin = true;
+                            req.session.username = username;
+                            return res.redirect('/pictionary');
+                        } else {
+                            return res.render('login', { message: "Mot de passe incorrect.", username: username });
+                        }
                     }
-                    if (results.length > 0) {
-                        req.session.loggedin = true;
-                        req.session.username = username;
-                        return res.redirect('/pictionary');
-                    }
-                    // Rendu de la page d'authentification avec des trucs à afficher en plus !
-                    return res.render('login', { message: "Nom d'utilisateur ou mot de passe incorrect.", username: username });
-                });
+                );
+            } else {
+                return res.render('login', { message: "Nom d'utilisateur inconnu.", username: username });
             }
         }
-    });
+    );
 });
 
 function getVerifAuth(req, res, next) {
@@ -227,7 +236,7 @@ function gameServer(roomPath) {
     function nouveau_mot() {
         var nouveauMot;
         do {
-            nouveauMot = mots_list[getRandomInt(mots_list.length - 1)].mot;
+            nouveauMot = mots_list[getRandomInt(mots_list.length - 1)];
         } while (nouveauMot === game_mot);
         game_mot = nouveauMot;
     }
