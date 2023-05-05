@@ -6,7 +6,7 @@
 
 `socket.io`
 
-`konva.js`
+`konva`
 
 `sqlite3`
 
