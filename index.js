@@ -33,7 +33,7 @@ fs.readFile(file_mots, "utf8", function(err, data) {
     lines.forEach(function(line) {
         const mot = line.trim();
         if (mot != '') {
-            mots_list.push(mot);
+            mots_list.push(mot.toLowerCase());
         }
     });
 });
@@ -276,6 +276,7 @@ function gameServer(roomPath) {
     function reset_game_info() {
         game = false;
         round = false;
+        tour_de_jeu = 0;
         nb_ready = 0;
         id_dessineur = -1;
         scores.forEach(scoreZero);
@@ -355,7 +356,7 @@ function gameServer(roomPath) {
         game_mot_cache = "";
         // remplacer les lettres du mots par des '_' pour les devinateurs
         for (let c of game_mot) {
-            game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : "  ";
+            game_mot_cache += (c.toLowerCase() != c.toUpperCase()) ? "_ " : (c + " ");
         }
         ioNsp.to(roomDevinateurs).emit("stoc round start", { mot: game_mot_cache, duree: duree_round });
         ioNsp.to(roomDessinateurs).emit("stoc round start", { mot: game_mot, duree: duree_round });
@@ -516,7 +517,7 @@ function gameServer(roomPath) {
                 // Un dessinateur ou un vainqueur envoie un message
                 socket.broadcast.except(roomDevinateurs).emit('chat message', { user: username, text: data, bool: false });
             } else {
-                if (data === game_mot) {
+                if (data.toLowerCase() === game_mot) {
                     socket.leave(roomDevinateurs);
                     users_vainqueurs.push(username);
                     ioNsp.emit('correct guess', username);

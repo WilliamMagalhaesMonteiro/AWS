@@ -1,15 +1,197 @@
-chat
-chien
-vache
-panda
-ours
-macron
-chèvre
-naruto
-sasuke
-kakashi
-luffy
-zoro
-sangoku
-végéta
-killua
+Chaise
+Table
+Chat
+Chien
+Téléphone
+Ordinateur
+Voiture
+Avion
+Arbre
+Fleurs
+Pluie
+Soleil
+Lune
+Étoile
+Bonbon
+Gâteau
+Pizza
+Hamburger
+Frites
+Crayon
+Stylo
+Livre
+Journal
+Radio
+Télévision
+Appareil photo
+Maillot de bain
+Chemise
+Pantalon
+Chaussures
+Chapeau
+Lunettes
+Sac à dos
+Parapluie
+Ballon
+Raquette de tennis
+Table de ping-pong
+Ballon de basket
+Ballon de football
+Ballon de volley-ball
+Ballon de rugby
+Ballon de handball
+Ballon de beach-volley
+Hockey sur glace
+Skateboard
+Planche à roulettes
+Vélo
+Moto
+Voilier
+Bateau
+Camion
+Train
+Bus
+Taxi
+Avocat
+Docteur
+Dentiste
+Professeur
+Étudiant
+Musicien
+Artiste
+Écrivain
+Journaliste
+Policier
+Pompiers
+Chef cuisinier
+Serveur
+Facteur
+Ingénieur
+Scientifique
+Astronaute
+Électricien
+Plombier
+Charpentier
+Menuisier
+Maçon
+Couvreur
+Peintre
+Paysagiste
+Jardinier
+Boucher
+Poissonnier
+Boulangère
+Pâtissier
+Fromager
+Épicier
+Coiffeur
+Esthéticienne
+Opticien
+Banquier
+Vendeur
+Caissier
+Hôtesse de l'air
+Steward
+Président
+Premier ministre
+Équipe de football
+Équipe de basket-ball
+Équipe de volley-ball
+Équipe de rugby
+Équipe de handball
+Équipe de hockey sur glace
+Équipe de baseball
+Château
+Palais
+Cathédrale
+Mosquée
+Temple
+Statue
+Pont
+Route
+Rue
+Place
+Musée
+Bibliothèque
+Hôpital
+École
+Université
+Cinéma
+Théâtre
+Stade
+Parc d'attractions
+Parc national
+Montagne
+Plage
+Forêt
+Lac
+Rivière
+Cascade
+Grotte
+Désert
+Ville
+Village
+Paysage urbain
+Paysage rural
+Statue de la Liberté
+Tour Eiffel
+Big Ben
+Pyramides de Gizeh
+Muraille de Chine
+Taj Mahal
+Opéra de Sydney
+Mont Rushmore
+Alcatraz
+Île de Pâques
+Machu Picchu
+Palais de Versailles
+Colisée
+Hollywood
+Las Vegas
+Times Square
+Broadway
+Central Park
+Yellowstone
+Grand Canyon
+Chutes du Niagara
+Mont Everest
+Nourriture pour chien
+Nourriture pour chat
+Nourriture pour oiseaux
+Nourriture pour poissons
+Nourriture pour chevaux
+Pizza margherita
+Sushi
+Pâtes
+Riz frit
+Hachis Parmentier
+Couscous
+Moussaka
+Fajitas
+Chili con carne
+Paella
+Risotto
+Gratin dauphinois
+Tarte Tatin
+Mousse au chocolat
+Crème brûlée
+Tiramisu
+Gâteau au chocolat
+Brownies
+Cupcakes
+Donuts
+Croissant
+Baguette
+Pain complet
+Beurre
+Confiture
+Fromage
+Yaourt
+Lait
+Jus d'orange
+Soda
+Café
+Thé
+Vin rouge
+Vin blanc
+Bière

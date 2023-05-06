@@ -23,18 +23,24 @@ const input = document.getElementById('chat-input');
 
 // La gestion des événements de base, ceux du pinceau et de la gomme.
 function traitsBinds() {
-    stage.on('mousedown', newLine);
-    window.addEventListener('mousemove', newPoint);
-    window.addEventListener('mouseup', endLine);
+    if (stage) {
+        stage.on('mousedown', newLine);
+        window.addEventListener('mousemove', newPoint);
+        window.addEventListener('mouseup', endLine);
+    }
 }
 
 // Evénements pour le rond
 function rondBinds() {
-    stage.on('mousedown', nouveauRond);
+    if (stage) {
+        stage.on('mousedown', nouveauRond);
+    }
 }
 
 function rempBinds() {
-    stage.on('mousedown', nouveauRemplissage);
+    if (stage) {
+        stage.on('mousedown', nouveauRemplissage);
+    }
 }
 
 // Tous les outils disponibles.
@@ -101,6 +107,10 @@ var usersVainqueurs = [];
 
 // scores
 var scores = [];
+
+// Donne à chaque utilisateur un identifiant
+// (pour identifier le conteneur dans la liste des participants)
+var users_id = new Map();
 
 // Ajout d'un nouvel élément au Layer, avec gestion de l'historique.
 function addContent(ctt) {
@@ -232,7 +242,8 @@ function stocRedo() {
 }
 
 function newChatMessage(msg) {
-    var item = document.createElement('li');
+    const item = document.createElement('li');
+    item.className = "text-container";
     if (msg.bool) {
 
         const texteGras = document.createElement("b");
@@ -241,7 +252,6 @@ function newChatMessage(msg) {
         item.appendChild(texteGras);
 
         item.style.color = "green";
-        //item.textContent = msg.text;
     }
     else {
         const texteGras = document.createElement("b");
@@ -249,17 +259,24 @@ function newChatMessage(msg) {
         texteGras.appendChild(texte);
         item.appendChild(texteGras);
         item.appendChild(document.createTextNode(msg.text));
-
-
-        //item.textContent = msg.text;
     }
     messages.appendChild(item);
 
     messages.scrollTop = messages.scrollHeight;
 }
 
+function giveUsersId() {
+    users_id.clear();
+    var compteur = 1;
+    for (let user of users) {
+        users_id.set(user, compteur);
+        compteur++;
+    }
+}
+
 function userList(list) {
     users = list.users;
+    giveUsersId();
     usersVainqueurs = list.vainqueurs;
     playersList.innerHTML = ""; //nettoyage
     for (let user of users) {
@@ -285,9 +302,10 @@ function userList(list) {
         pseudoB.appendChild(texteGras);
 
         let pseudo = document.createElement("div");
+        pseudo.className = "text-container";
         pseudo.appendChild(pseudoB);
         let score = document.createElement("div");
-        score.id = user + "-score";
+        score.id = "score-" + users_id.get(user);
         score.textContent = 0 + " points";
         playerName.appendChild(pseudo);
         playerName.appendChild(score);
@@ -305,13 +323,14 @@ function updateListScores() {
             }
         }
     }
+    console.log(scores);
     const playerContainers = playersList.querySelectorAll('.player-container');
     playerContainers.forEach(ctn => ctn.remove());
     let c = 1;
     for (let i of scores) {
         for (let elem of playerContainers) {
             if (elem.getAttribute("id") === i.name) {
-                let div_score = elem.querySelector("#" + i.name + "-score");
+                let div_score = elem.querySelector("#score-" + users_id.get(i.name));
                 div_score.textContent = i.value + " points";
                 let rank = elem.querySelector(".player-rank");
                 rank.textContent = "#" + c;
@@ -518,7 +537,7 @@ for (let i = 0; i < tchild.length; i++) {
 
 // Bouton de suppression.
 poubelleImg.addEventListener('click', function () {
-    if (!roleDessinateur)
+    if (!roleDessinateur || !layer)
         return;
     if (confirm("Êtes-vous sûr de vouloir supprimer votre beau dessin ?")) {
         layer.destroyChildren();
@@ -606,6 +625,7 @@ function socket_comm() {
     });
     
     socket.on("stoc user list", function (list) {
+        console.log(list);
         userList(list);
     });
     
@@ -707,6 +727,7 @@ function socket_comm() {
         }
         newDessinateurs(users);
         container.innerHTML = "";
+        stage = null;
         if (roleDessinateur) {
             let titre = document.createElement("p");
             titre.appendChild(document.createTextNode("Mot : "));
@@ -759,6 +780,7 @@ function socket_comm() {
     socket.on("stoc round start", function (info) {
         container.innerHTML = "";
         zoneDessin();
+        console.log(info.mot);
         wordToFind.textContent = info.mot;
         if (usersDessinateurs.includes(username)) {
             outils[outil_id].binds();
@@ -841,6 +863,8 @@ function tentativeDeCo(roomID, isOwner) {
     });
 
     socket.on("connect", () => {
+        const room_display = document.getElementById("room-code");
+        room_display.textContent = roomID.replace("/","");
         socket_comm();
         waitingScreen(roomID, isOwner);
     });
