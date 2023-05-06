@@ -1,0 +1,36 @@
+\documentclass[11pt,a4paper]{article}
+
+
+\date{}
+\title{Rapport projet AWS - Pictionary}
+\author{ Hugo Chanas \\ William Magalhaes Monteiro \\ Asmaa Ouguenoune \\ Christian Knayzeh }
+
+\begin{document}
+    \maketitle
+    \section{Présentation du projet}
+        \subsection{L'idée de base}
+            \paragraph{}
+            L'idée de base du projet est de proposer un jeu de type pictionary.
+            Un joueur doit faire deviner un mot en le dessinant et les autres doivent trouver le plus vite possible.
+            Le projet est très inspiré de Skribbl.io.
+            \paragraph{}
+            Il nous faut donc au moins la possibilité de dessiner, avec le partage du dessin en temps réel,
+            et un chat où les utilisateurs peuvent tenter de deviner le mot.
+        \subsection{Les technologies que l'on a utilisées}
+            \paragraph{}
+            Pour la partie dessin, nous aurions pu utiliser l'API de base pour dessiner sur des canvas HTML,
+            mais nous avons choisi d'utiliser le framework Konva pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
+            \paragraph{}
+            Pour gérer la communication, nous sommes partis sur socket.io, qui permet de gérer la communication en temps réel,
+            aussi bien pour le dessin que pour le chat.
+            \paragraph{}
+            Nous utilisons aussi Express et Express session pour gérer l'authentification et les sessions.
+            Les comptes sont gérés avec SQLite.
+            Nous avons commencé avec une base de données MySQL mais avons décidé de changer pour simplifier le projet et (surtout) l'hébergement (finalement sur Glitch).
+    \section{Ce que l'on a fait - Description du projet}
+        \subsection{Authentification et base de données}
+        \subsection{Partie jeu}
+    \section{Ce que l'on a appris}
+        \subsection{Gérer des comptes et l'authentification}
+        \subsection{Communication en temps réel}
+\end{document}
