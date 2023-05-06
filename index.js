@@ -254,7 +254,6 @@ function gameServer(roomPath) {
     }
 
     function marquer_points() {
-        round = false;
         for (let user of usrs_dessinateurs) {
             points_marques.set(user, users_vainqueurs.length);
         }
@@ -283,6 +282,7 @@ function gameServer(roomPath) {
     }
 
     function nouveau_tour() {
+        round = false;
         if (timeout) {
             clearTimeout(timeout);
             timeout = null;
@@ -515,7 +515,12 @@ function gameServer(roomPath) {
         socket.on('chat message', (data) => {
             if (usrs_dessinateurs.includes(username) || users_vainqueurs.includes(username)) {
                 // Un dessinateur ou un vainqueur envoie un message
-                socket.broadcast.except(roomDevinateurs).emit('chat message', { user: username, text: data, bool: false });
+                if (round) {
+                    socket.broadcast.except(roomDevinateurs).emit('chat message', { user: username, text: data, bool: false });
+                } else {
+                    socket.broadcast.emit('chat message', { user: username, text: data, bool: false });
+                }
+                
             } else {
                 if (data.toLowerCase() === game_mot) {
                     socket.leave(roomDevinateurs);
