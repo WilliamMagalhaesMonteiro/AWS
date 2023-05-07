@@ -22,15 +22,124 @@
             mais nous avons choisi d'utiliser le framework Konva pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
             \paragraph{}
             Pour gérer la communication, nous sommes partis sur socket.io, qui permet de gérer la communication en temps réel,
-            aussi bien pour le dessin que pour le chat.
+            aussi bien pour le dessin que pour le chat. Pour le reste, nous avons utilisé Express.
             \paragraph{}
-            Nous utilisons aussi Express et Express session pour gérer l'authentification et les sessions.
+            Nous utilisons aussi Express session pour gérer l'authentification et les sessions.
             Les comptes sont gérés avec SQLite.
             Nous avons commencé avec une base de données MySQL mais avons décidé de changer pour simplifier le projet et (surtout) l'hébergement (finalement sur Glitch).
     \section{Ce que l'on a fait - Description du projet}
         \subsection{Authentification et base de données}
+            \paragraph{}
+            Notre application ne permet qu'aux joueurs ayant un compte d'accéder au jeu.
+            Il existe donc trois pages autres que celle du jeu :
+            \begin{itemize}
+                \item Une page d'accueil,
+                \item une page d'authentification pour se connecter,
+                \item une page de création de compte.
+            \end{itemize}
+            \paragraph{}
+            Pour gérer les réponses du serveur sur ces deux dernières,
+            on utilise le moteur pug.
+            On peut ainsi afficher des messages d'erreurs sans avoir besoin de script.
+            On affiche donc un message rouge en bas de la page lorsqu'un nom d'utilisateur ou mot de passe est invalide,
+            ou encore si le nom choisi est déjà utilisé, etc.
+            \paragraph{}
+            Dès qu'une requête de connexion ou de création est reçue,
+            le serveur interroge l'instance SQLite et ajoute le compte ou autorise la connexion en conséquence.
+
+            La base de données ne contient qu'une page pour les comptes, avec un nom d'uilisateur, un mot de passe haché,
+            et une valeur aléatoire utilisée comme padding sur le mot de passe avent le hachage.
+            \paragraph{}
+            Pour la liste des mots à dessiner qui peuvent être proposés aux joueurs,
+            elle est enregistrée dans un simple fichier.
+            En effet, comme la liste est fixée, et non modifiable par un utilisateur,
+            il n'est pas nécessaire de l'ajouter à la base.
         \subsection{Partie jeu}
+            \subsubsection{Dessin}
+                \paragraph{}
+                Pour la partie dessin, on utilise des objets Konva.
+                Pour chaque outil disponible, une série de 'binds' est définie,
+                et appliquée lorsque l'utilisateur clique sur le bouton qui correspond.
+                Chaque nouvel élément du dessin est un nouvel objet Konva qui est ajouté au Layer.
+                \paragraph{}
+                Pour le crayon ou la gomme, à chaque nouveau clic un objet Konva.Line est créé.
+                Tant que le clic est enfoncé, et à chaque mouvement de la souris, un point est ajouté à la ligne.
+                Un tel objet représente en effet une suite de segments reliés entre eux.
+                Les attributs de l'objet sont définis en fonction des choix de l'utilisateur pour l'épaisseur et la couleur.
+                \paragraph{}
+                Pour l'outil `rond', un disque est ajouté à chaque nouveau clic.
+                Cet outil très rudimentaire a été ajouté en prévision d'une modification ou d'une amélioration,
+                mais qui n'a finalement pas été faite.
+                \paragraph{}
+                L'implémentation de l'outil remplissage était de loin la plus difficile.
+                En effet, il a fallu accéder au contexte 2D du canvas pour obtenir la matrice de pixel,
+                et appliquer un algorithme de remplissage par diffusion.
+                Après avoir obtenu une nouvelle matrice de pixels correspondant à la zone à colorier,
+                une image bitmap est crée, et est utilisée pour initialiser un objet Konva.Image.
+
+                Cet outil est assez important dans une application de dessin,
+                et aurait manqué si il n'avait pas été ajouté.
+                \paragraph{}
+                Pour les boutons `undo' et `redo' (les flèches), un simple nombre entier est incrémenté ou décrémenté.
+                Ce nombre représente le nombre d'objet de la liste qui sont affichés à l'écran.
+                Lorque le compteur diminue, un objet est effacé de la zone de dessin.
+                A l'inverse le dernier objet a avoir été enlevé est réajouté quand le compteur augmente.
+                Si l'utilisateur dessin un nouvel élément alors que certains on été effacés,
+                ceux-ci sont définitivement supprimés,
+                et le comtpeur prend comme valeur la taille du tableau d'objets affichés.
+
+                Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets du Layer.
+            \subsubsection{Communications}
+                \paragraph{}
+                Une fois sur la page du jeu, toutes les communications entre les clients et le serveur sont gérées avec socket.io.
+                \paragraph{}
+                Lorque le serveur désigne un ou plusieurs dessinateurs, ceux-ci sont placés dans une `room',
+                ce qui permet de leur envoyer des messages ciblés.
+                Par exemple, le mot qu'ils doivent faire deviner n'est envoyé qu'à eux.
+                Les autres recoivent en effet une chaine de caractères avec les lettre remplassés par des tirets bas.
+
+                Une autre room existe où sont placés les utilisateurs qui doivent deviner le mot et qui ne l'ont pas encore trouvé.
+                Les messages du chat envoyés par les dessinateurs et ceux qui ont devinés ne sont ainsi pas visibles par ceux qui cherchent.
+                \paragraph{}
+                Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur.
+                Pour les traits et les disques,
+                des coordonnées et une couleur sont transmisesn ce qui permet aux autres utilisateurs de créer des objet parfaitement indentiques de leur côté.
+                \paragraph{}
+                Pour le remplissage, c'est un peu plus compliqué.
+                Transmettre la matrice de pixels entière serait en effet assez lourd ($\approx$ 1Mo par image).
+                Il est assez simple de réduire le volume de données, et on a utilisé deux solutions.
+                
+                Dans un premier temps, le remplissage n'a qu'une seule couleur.
+                On peut donc transmettre la couleur en parallèle du tableau,
+                et réduire l'information de chaque pixel à un booléen.
+                Pour des raisons techniques, les pixels sont représentés par des octets,
+                bien qu'ils ne puissent prendre que deux valeurs.
+
+                Cela donne un tableau de 0 et de 1.
+                Pour réduire encore le volume de données,
+                chaque suite de 1 est remplacée par deux nombres :
+                la position du premier 1 dans le tableau, et la longueur de la suite.
+                Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.
+                \paragraph{}
+                L'ensemble des modifications apportées au dessin sont traités et enregistrées par le serveur,
+                y compris undo, redo et la suppression.
+                Ansi, lorsqu'un nouvel utilisateur rejoint le jeu en cours de route,
+                la pile d'objets dessinés lui est envoyée pour qu'il puisse afficher le dessin tel qu'il est à cet instant.
+
     \section{Ce que l'on a appris}
-        \subsection{Gérer des comptes et l'authentification}
-        \subsection{Communication en temps réel}
+        \begin{itemize}
+            \item Travailler en groupe (avec les 3 rôles à permuter par semaine).
+            \item Gestion des requêtes des clients, réponses, redirections, etc.
+            \item Gestion d'une petite base de données.
+            \item Ecriture de scipt javascript complexe pour une application.
+            \item Communication en temps réel entre un serveur et plusieurs clients.
+            \item Sécuriser une base de données contenant des mots de passe.
+        \end{itemize}
+    \section{Ce que l'on pourrait ajouter ou améliorer}
+        \begin{itemize}
+            \item Fonctionnalités diverses du jeu.
+            \item Page dédiée à la modification de la liste de mots par des admins.
+            \item Autoriser aux utilisateurs à ne pas créer un compte.
+            \item etc.
+        \end{itemize}
 \end{document}
