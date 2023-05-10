@@ -1,5 +1,5 @@
 \documentclass[11pt,a4paper]{article}
-
+\usepackage{hyperref}
 
 \date{}
 \title{Rapport projet AWS - Pictionary}
@@ -10,18 +10,18 @@
     \section{Présentation du projet}
         \subsection{L'idée de base}
             \paragraph{}
-            L'idée de base du projet est de proposer un jeu de type pictionary.
-            Un joueur doit faire deviner un mot en le dessinant et les autres doivent trouver le plus vite possible.
-            Le projet est très inspiré de Skribbl.io.
+            L'idée de base du projet est de proposer un jeu de type Pictionary.
+            Un joueur doit faire deviner un mot en le dessinant et les autres doivent le trouver le plus vite possible.
+            Le projet est très inspiré de \href{https://skribbl.io/}{Skribbl.io}.
             \paragraph{}
             Il nous faut donc au moins la possibilité de dessiner, avec le partage du dessin en temps réel,
             et un chat où les utilisateurs peuvent tenter de deviner le mot.
         \subsection{Les technologies que l'on a utilisées}
             \paragraph{}
             Pour la partie dessin, nous aurions pu utiliser l'API de base pour dessiner sur des canvas HTML,
-            mais nous avons choisi d'utiliser le framework Konva pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
+            mais nous avons choisi d'utiliser le framework Konva.js pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
             \paragraph{}
-            Pour gérer la communication, nous sommes partis sur socket.io, qui permet de gérer la communication en temps réel,
+            Pour gérer la communication, nous avons choisi Socket.io, qui permet de gérer la communication en temps réel,
             aussi bien pour le dessin que pour le chat. Pour le reste, nous avons utilisé Express.
             \paragraph{}
             Nous utilisons aussi Express session pour gérer l'authentification et les sessions.
@@ -48,7 +48,7 @@
             le serveur interroge l'instance SQLite et ajoute le compte ou autorise la connexion en conséquence.
 
             La base de données ne contient qu'une page pour les comptes, avec un nom d'uilisateur, un mot de passe haché,
-            et une valeur aléatoire utilisée comme padding sur le mot de passe avent le hachage.
+            et une valeur aléatoire utilisée comme padding sur le mot de passe avant le hachage.
             \paragraph{}
             Pour la liste des mots à dessiner qui peuvent être proposés aux joueurs,
             elle est enregistrée dans un simple fichier.
@@ -91,19 +91,19 @@
                 Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets du Layer.
             \subsubsection{Communications}
                 \paragraph{}
-                Une fois sur la page du jeu, toutes les communications entre les clients et le serveur sont gérées avec socket.io.
+                Une fois sur la page du jeu, toutes les communications entre les clients et le serveur sont gérées avec Socket.io.
                 \paragraph{}
-                Lorque le serveur désigne un ou plusieurs dessinateurs, ceux-ci sont placés dans une `room',
+                Lorsque le serveur désigne un ou plusieurs dessinateurs, ceux-ci sont placés dans une `room',
                 ce qui permet de leur envoyer des messages ciblés.
                 Par exemple, le mot qu'ils doivent faire deviner n'est envoyé qu'à eux.
-                Les autres recoivent en effet une chaine de caractères avec les lettre remplassés par des tirets bas.
+                Les autres reçoivent en effet une chaîne de caractères avec les lettre remplacées par des tirets bas (comme au pendu).
 
                 Une autre room existe où sont placés les utilisateurs qui doivent deviner le mot et qui ne l'ont pas encore trouvé.
                 Les messages du chat envoyés par les dessinateurs et ceux qui ont devinés ne sont ainsi pas visibles par ceux qui cherchent.
                 \paragraph{}
                 Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur.
                 Pour les traits et les disques,
-                des coordonnées et une couleur sont transmisesn ce qui permet aux autres utilisateurs de créer des objet parfaitement indentiques de leur côté.
+                des coordonnées et une couleur sont transmises ce qui permet aux autres utilisateurs de créer des objet parfaitement indentiques de leur côté.
                 \paragraph{}
                 Pour le remplissage, c'est un peu plus compliqué.
                 Transmettre la matrice de pixels entière serait en effet assez lourd ($\approx$ 1Mo par image).
@@ -111,7 +111,7 @@
                 
                 Dans un premier temps, le remplissage n'a qu'une seule couleur.
                 On peut donc transmettre la couleur en parallèle du tableau,
-                et réduire l'information de chaque pixel à un booléen.
+                et réduire 'information de chaque pixel à un booléen.
                 Pour des raisons techniques, les pixels sont représentés par des octets,
                 bien qu'ils ne puissent prendre que deux valeurs.
 
