@@ -131,8 +131,6 @@ Grotte
 Désert
 Ville
 Village
-Paysage urbain
-Paysage rural
 Statue de la Liberté
 Tour Eiffel
 Big Ben
