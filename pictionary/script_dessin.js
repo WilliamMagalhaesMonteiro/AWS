@@ -50,7 +50,7 @@ const outils = [{ tool: 'brush', file: "images/crayon.png", binds: traitsBinds }
 { tool: 'fill', file: "images/remplissage.png", binds: rempBinds }];
 
 // Toutes les couleurs disponibles, avec un bouton pour chaque couleur.
-const couleurs = ["#ff0000", "#00f00f", "#0000ff", "#f6f600", "#ff9000", "#ff00ff", "#000000", "#ffffff"];
+const couleurs = ["#ff0000", "#00f00f", "#0000ff", "#f6f600", "#ff9000", "#ff00ff", "#ffd19a", "#8c4c00", "#000000", "#a1a1a1", "#ffffff"];
 
 // Toute les tailles disponibles pour le pinceau et la gomme.
 const tailles = [5, 10, 15, 20, 25, 30];
