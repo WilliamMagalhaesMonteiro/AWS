@@ -19,7 +19,8 @@
         \subsection{Les technologies que l'on a utilisées}
             \paragraph{}
             Pour la partie dessin, nous aurions pu utiliser l'API de base pour dessiner sur des canvas HTML,
-            mais nous avons choisi d'utiliser le framework Konva.js pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
+            mais nous avons préféré utiliser le framework Konva.js car il plus facile à prendre en main et à utiliser,
+            et apporte plus de fonctionnalités.
             \paragraph{}
             Pour gérer la communication, nous avons choisi Socket.io, qui permet de gérer la communication en temps réel,
             aussi bien pour le dessin que pour le chat. Pour le reste, nous avons utilisé Express.
@@ -125,29 +126,115 @@
                 y compris undo, redo et la suppression.
                 Ansi, lorsqu'un nouvel utilisateur rejoint le jeu en cours de route,
                 la pile d'objets dessinés lui est envoyée pour qu'il puisse afficher le dessin tel qu'il est à cet instant.
-
-       
+                \paragraph{}
+                Le déroulement du jeu est planifié par le serveur.
+                Au début de chaque manche, le serveur désigne donc le ou les dessinateurs,
+                et envoie un message à ceux-ci contenant le mot qu'ils doivent faire deviner.
+                Il attend ensuite de recevoir la confirmation de tous les dessinateurs (quand il cliquent sur `commencer') pour signaler
+                à tout le monde que la manche commence.
+                \paragraph{}
+                A chaque fois qu'un joueur faisant partie de ceux qui devinent envoie un message dans le chat,
+                il est vérifié si il correspond au mot à deviner ou non pour savoir si il a gagné.
+                \paragraph{}
+                Lorque le temps est écoulé ou que tous les joueurs ont trouvé le mot, la manche se termine,
+                les points sont calculés en fonction de l'ordre dans lequels les joueurs ont deviné,
+                et une nouvelle manche commence.
+                \paragraph{}
+                Pour choisir les dessinateurs, un premier est désigné de façon cyclique (l'un après l'autre),
+                puis, s'il y en a d'autres, de façons aléatoire.
+                Ainsi, un tour de jeu correspond à un cycle,
+                ce qui permet à chaque joueur de dessiner au moins une fois par tour.
+                Lorsque le nombre de tours joué atteint le nombre spécifié au début par le créateur de la partie,
+                le jeu se termine et le joueur à avoir marqué le plus de points est vainqueur.
 
     \section{Ce que l'on a appris}
-
-        \subsection{Travailler en groupe (avec les 3 rôles à permuter par semaine)}
+        \subsection*{Travailler en groupe (avec les 3 rôles à permuter par semaine)}
+            \paragraph{}
             Cela a sûrement été la partie la plus difficile.
-    
-        \begin{itemize}        
-            \item Gestion des requêtes des clients, réponses, redirections, etc.
-            \item Gestion d'une petite base de données.
-            \item Écriture de script javascript complexe pour une application.
-            \item Communication en temps réel entre un serveur et plusieurs clients.
-            \item Sécuriser une base de données contenant des mots de passe.
-        \end{itemize}
-    \section{Ce que l'on pourrait ajouter ou améliorer}
-        \subsection{Fonctionnalités diverses du jeu}
-        \begin{itemize}
-            \item Ajouter d'autres formes prédéfinies.
-            \item Ajouter la possibilité de choisir une couleur plus précisément avec un sélecteur de couleurs        
-        \end{itemize}
-
-        \subsection{Page dédiée à la modification de la liste de mots par des admins.}
+            En effet, nous ne nous sommes pas rencontrés souvent,
+            et avons donc dû communiquer presque exclusivement sur un serveur discord...
+            \paragraph{}
+            Le fait d'interchanger les rôles chaque semaine était une experience assez intéressante,
+            nous forçant tous à fournir une partie du travail,
+            et à apporter notre vision au projet.
+        \subsection*{Gestion des requêtes des clients, réponses, redirections}
+            \paragraph{}
+            Nous avons appris comment fonctionne une application web classique,
+            avec un ensemble de pages dans lesquelles naviguent des utilisateurs,
+            envoyant régulièrement diverses requêtes au serveur.
+            \paragraph{}
+            Nous avons utilisé des middlewares pour gérer l'authentification,
+            les sessions et l'interrogation de la base de données.
         
-        \subsection{Autoriser aux utilisateurs à ne pas créer un compte}
+        \subsection*{Gestion d'une petite base de données}
+            \paragraph{}
+            Pour enregistrer les comptes,
+            nous avons dû apprendre à manipuler une petite base de données dans le script du serveur.
+        \subsection*{Écriture de script javascript complexe pour une application}
+            \paragraph{}
+            Les scripts côté serveur et client qui gère la partie jeu sont assez longs et complexes.
+            Nous avons donc lors de leur écriture beacoup progressé en javascript.
+            \paragraph{}
+            Certains aspects notamment comme l'outil remplissage avec des matrices de pixels et des images bitmap 
+            ont été particulièrement instructifs.
+        \subsection*{Communication en temps réel entre un serveur et plusieurs clients}
+            \paragraph{}
+            Pour obtenir un jeu fonctionnel en temps réel, nous avons dû apprendre à bien manipuler Socket.io.
+            Cette partie est en effet une nouveauté,
+            bien différente de la programmation séquentielle à laquelle nous sommes habitués.
+        \subsection*{Sécuriser une base de données contenant des mots de passe.}
+            \paragraph{}
+            Nous avons pu appliquer directement les enseignements de notre maître en sécurité avec notre base de données.
+            Cela nous a permis de nous initier à l'utilisation de la cryptographie dans les applications web en javascript.
+    \section{Ce que l'on pourrait ajouter ou améliorer}
+        \subsection*{Fonctionnalités diverses du jeu}
+            \begin{itemize}
+                \item Ajouter et améliorer des outils
+                
+                L'outil `rond' est particulièrement discutable,
+                et faisait partie du projet d'ajouter des formes prédéfinies diverses,
+                pouvant être placées avec précisions, bougées, etc.
+
+                Konva permet de manipuler des objets graphiques facilement,
+                et nous aurions pu en profiter pour facilement implémenter ces fonctionnalités.
+                \item Ajouter un sélecteur de couleurs
+                
+                Notre jeu ne dispose que d'une quantité limitée de couleurs parmi lesquelles choisir.
+                Il serait pratique pour les dessinateurs de pouvoir choisir une couleur dans un sélecteur dédié.
+
+                Cependant, comme il s'agit aussi d'un jeu de vitesse,
+                la majorité des joueurs se contentent des couleurs prédéfinies.
+                Pour cette raison, nous nous sommes contentés de quelques couleurs.
+                \item Le déroulement du jeu
+                
+                Un assez grand nombre de petites améliorations peuvent encore être faites sur le jeu.
+
+                Par exemple, la façon de choisir les dessinateurs quand il y en a plusieurs repose en partie sur l'aléatoire.
+                Le mieux serait de choisir de façon déterministe, en s'assurant que tout le monde dessine autant de fois,
+                et en essayant de créer des groupes différents à chaque fois.
+
+                Le méthode pour compter les points n'est pas très avancées non plus, et pourrait largement être améliorée.
+            \end{itemize}
+        \subsection*{Page dédiée à la modification de la liste de mots par des admins.}
+            \paragraph{}
+            Nous avons une liste de mots statique.
+            Elle n'est donc pas incluse dans la base de données,
+            et ne peut être modifiée que par l'administrateur du serveur.
+            \paragraph{}
+            Une bonne amélioration à apporter serait de l'y ajouter,
+            et de créer une page accessible par des utilisateurs ayant un rôle admin qui leut permettent d'ajouter ou d'enlever des mots.
+            Nous aurions alors besoin d'ajouter des rôles et privilèges aux utilisateurs,
+            ce qui peut être un aspect intéressant à apprendre.
+        \subsection*{Autoriser aux utilisateurs à ne pas créer un compte}
+            \paragraph{}
+            Les utilisateurs sont forcés de créer un compte pour jouer au jeu.
+            Cependant, rien n'est associé au compte à part le nom d'utilisateur et le mot de passe.
+            Nous pourrions donc simplement demander à des utilisateurs sans compte d'entrer un nom
+            qui serait utilisé seulement pendant sa session de jeu.
+            \paragraph{}
+            Il serait aussi possible par la même occasion d'ajouter des données liées aux comptes,
+            comme des statistiques, visibles sur une page dédiée.
+            Cela justifierait vraiment la création des comptes pour les utilisateurs.
+
+
 \end{document}
