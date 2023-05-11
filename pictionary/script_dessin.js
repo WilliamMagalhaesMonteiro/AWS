@@ -93,7 +93,8 @@ var outil_id = 0;
 
 var color = couleurs[0];
 var epaisseur = tailles[0];
-var lastLine;
+const currentLines = new Map();
+var ownCurrentLine;
 
 // Gestion de l'historique pour undo et redo.
 var content = [];
@@ -196,18 +197,25 @@ async function buildNewImage(props) {
 }
 
 // Le serveur envoie une nouvelle ligne.
-function stocNewLine(props) {
-    lastLine = buildNewLine(props);
-    addContent(lastLine);
+function stocNewLine(infos) {
+    const newLine = buildNewLine(infos.props);
+    currentLines.set(infos.usr, newLine);
+    addContent(newLine);
 }
 
 // Serveur -> nouveau point.
-function stocNewPoint(props) {
-    lastLine.points(lastLine.points().concat([props.coords.x, props.coords.y]));
+function stocNewPoint(infos) {
+    const lastLine = currentLines.get(infos.usr);
+    if (lastLine) {
+        lastLine.points(lastLine.points().concat([infos.props.coords.x, infos.props.coords.y]));
+    }
 }
 // Serveur -> ligne en cache.
-function stocCacheLine() {
-    lastLine.cache();
+function stocCacheLine(usr) {
+    const lastLine = currentLines.get(usr);
+    if (lastLine) {
+        lastLine.cache();
+    }
 }
 // Serveur -> nouveau cercle.
 function stocNewCircle(props) {
@@ -372,9 +380,9 @@ function newLine(e) {
     isPaint = true;
     const pos = stage.getPointerPosition();
     var props = { coords: pos, width: epaisseur, clr: color, mode: (outils[outil_id].tool === 'brush') ? 'source-over' : 'destination-out', points: [] };
-    lastLine = buildNewLine(props);
+    ownCurrentLine = buildNewLine(props);
     socket.emit("ctos draw line", props);
-    addContent(lastLine);
+    addContent(ownCurrentLine);
 }
 
 // Nouveau segment sur le trait à chaque déplacement de souris.
@@ -383,9 +391,9 @@ function newPoint(e) {
         return;
     const pos = getPtrPosStage({ x: e.pageX, y: e.pageY });
     var props = { coords: pos };
-    var newPoints = lastLine.points().concat([props.coords.x, props.coords.y]);
+    var newPoints = ownCurrentLine.points().concat([props.coords.x, props.coords.y]);
     socket.emit("ctos draw point", props);
-    lastLine.points(newPoints);
+    ownCurrentLine.points(newPoints);
 }
 
 // Le clic est relaché, fin du tracé de la ligne et mise en cache.
@@ -394,7 +402,7 @@ function endLine() {
         return;
     if (isPaint) {
         isPaint = false;
-        lastLine.cache();
+        ownCurrentLine.cache();
         socket.emit("ctos cache line");
     }
 }
@@ -660,16 +668,17 @@ function socket_comm() {
         for (let i = 0; i < props.pile.length; i++) {
             switch (props.pile[i].type) {
                 case 'newLine':
-                    lastLine = buildNewLine(props.pile[i].props);
+                    const newLine = buildNewLine(props.pile[i].props);
+                    currentLines.set(props.pile[i].usr, newLine);
                     for (let elem of props.pile[i].props.points) {
-                        lastLine.points(lastLine.points().concat([elem.x, elem.y]));
+                        newLine.points(lastLine.points().concat([elem.x, elem.y]));
                     }
                     if (i < props.lg) {
-                        layer.add(lastLine);
-                        lastLine.setZIndex(i);
+                        layer.add(newLine);
+                        newLine.setZIndex(i);
                     }
-                    lastLine.cache();
-                    content[i] = lastLine;
+                    newLine.cache();
+                    content[i] = newLine;
                     continue;
                 case 'newCircle':
                     let cercle = buildNewCircle(props.pile[i].props);
@@ -833,10 +842,13 @@ function finDePartie(owner) {
     }
 }
 
+var erreur_timeout = null;
+
 function tentativeDeCo(roomID, isOwner) {
     socket = io(roomID);
 
-    socket.on('connect_error', () => {
+    socket.on('connect_error', (err) => {
+        console.log(err);
         var err_co = document.getElementById("erreur-connexion");
         if (err_co) {
             err_co.innerHTML = "";
@@ -845,13 +857,17 @@ function tentativeDeCo(roomID, isOwner) {
             err_co.setAttribute("id", "erreur-connexion");
             container.appendChild(err_co);
         }
-        
-        setTimeout(function() {
+        if (erreur_timeout) {
+            clearTimeout(erreur_timeout);
+            erreur_timeout = null;
+        }
+        erreur_timeout = setTimeout(function() {
             const titre = document.createElement("p");
             const texteGras = document.createElement("b");
-            texteGras.appendChild(document.createTextNode("Partie introuvable"));
+            texteGras.appendChild(document.createTextNode("Erreur de connexion"));
             titre.appendChild(texteGras);
             err_co.appendChild(titre);
+            erreur_timeout = null;
         }, 100);
     });
 
@@ -1019,9 +1035,16 @@ createRoomButton.addEventListener("click", function () {
         method: 'GET'
     })
     .then(function(response) {
-        response.text().then(function(text) {
-            tentativeDeCo(text, true);
-        })
+        if (response.redirected) {
+            // Récupérer l'URL de redirection
+            const redirectUrl = response.url;
+            // Rediriger le navigateur vers l'URL de redirection
+            window.location.href = redirectUrl;
+        } else { // Il faudrait faire d'autres vérifs ?
+            response.text().then(function(text) {
+                tentativeDeCo(text, true);
+            })
+        }
     })
     .catch(function (err) {
         console.log(err);

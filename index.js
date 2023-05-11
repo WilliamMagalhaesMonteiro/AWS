@@ -126,7 +126,7 @@ app.post('/auth', function (req, res) {
                             return res.render('login', { message: "Une erreur est survenue.", username: username });
                         }
                         if (rows.length > 0) {
-                            req.session.loggedin = true;
+                            req.session.authenticated = true;
                             req.session.username = username;
                             return res.redirect('/pictionary');
                         } else {
@@ -142,12 +142,11 @@ app.post('/auth', function (req, res) {
 });
 
 function getVerifAuth(req, res, next) {
-    if (req.session.loggedin) {
+    if (req.session.authenticated === true) {
         return next();
     } else {
-        res.redirect('/auth');
+        return res.redirect('/auth');
     }
-    res.end();
 }
 
 app.use(express.static(path.join(__dirname, 'pictionary')));
@@ -171,6 +170,7 @@ app.get('/new-room', getVerifAuth, function (req, res) {
 const { Server } = require("socket.io");
 const io = new Server(server);
 // Utilisation du middleware de session pour l'authentification
+
 io.engine.use(sessionMiddleware);
 
 function removeFromTab(tab, elem) {
@@ -184,7 +184,8 @@ function gameServer(roomPath) {
 
     var draw_stack = []; // la pile d'éléments ayant été dessinés
     var effSize = 0; // le nombre d'éléments de la pile qui sont affichés (change avec undo/redo)
-    let lastLine;  // la dernière ligne ayant été tracée (ou en cours)
+
+    let currentLines = new Map();  // Lignes qui son en train d'être tracées
 
     var chat_stack = [];
 
@@ -260,7 +261,7 @@ function gameServer(roomPath) {
         points_marques.forEach(ajouterScore);
         var arrayScores = Array.from(scores, ([name, value]) => ({ name, value }));
         arrayScores.sort(compareScore);
-        var msg = "Points marqués : ";
+        var msg = "Le mot était : " + game_mot + ". Points marqués : ";
         for (let entry of points_marques.entries()) {
             msg += entry[0] + " : " + entry[1] + ", ";
         }
@@ -279,6 +280,7 @@ function gameServer(roomPath) {
         nb_ready = 0;
         id_dessineur = -1;
         scores.forEach(scoreZero);
+        currentLines.clear();
     }
 
     function nouveau_tour() {
@@ -345,7 +347,7 @@ function gameServer(roomPath) {
             timeout = null;
         }
         reset_game_info();
-        usersDessinateurs = [];
+        usrs_dessinateurs = [];
         users_vainqueurs = [];
         instantDebut = null;
         suppression();
@@ -462,25 +464,26 @@ function gameServer(roomPath) {
 
         // Nouvelle ligne
         socket.on("ctos draw line", function (props) {
-            socket.broadcast.emit("stoc draw line", props);
+            socket.broadcast.emit("stoc draw line", {props: props, usr: username});
             clearPrev();
-            draw_stack.push({ type: 'newLine', props: props });
+            draw_stack.push({ type: 'newLine', props: props, usr: username });
             effSize = draw_stack.length;
-            lastLine = props;
+            currentLines.set(username, props);
         });
 
         // Fin du ligne, mise en cache.
         socket.on("ctos cache line", function () {
-            socket.broadcast.emit("stoc cache line");
+            socket.broadcast.emit("stoc cache line", {usr: username});
             // pas besoin d'ajouter cette information à la pile,
             // chaque nouvelle ligne est mise en cache lors d'une nouvelle connexion
         });
 
         // Nouveau point d'une ligne.
         socket.on("ctos draw point", function (props) {
-            socket.broadcast.emit("stoc draw point", props);
-            if (lastLine) {
-                lastLine.points.push(props.coords);
+            socket.broadcast.emit("stoc draw point", {props: props, usr: username});
+            const line = currentLines.get(username);
+            if (line) {
+                line.points.push(props.coords);
             }
         });
 
