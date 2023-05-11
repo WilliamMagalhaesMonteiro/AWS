@@ -323,7 +323,6 @@ function updateListScores() {
             }
         }
     }
-    console.log(scores);
     const playerContainers = playersList.querySelectorAll('.player-container');
     playerContainers.forEach(ctn => ctn.remove());
     let c = 1;
@@ -608,8 +607,6 @@ function socket_comm() {
         newDessinateurs(infos.dessinateurs);
         wordToFind.textContent = infos.mot;
         scores = infos.scores;
-        console.log("game infos");
-        console.log(scores);
         updateListScores();
         zoneDessin();
         seconds = infos.temps_restant;
@@ -625,7 +622,6 @@ function socket_comm() {
     });
     
     socket.on("stoc user list", function (list) {
-        console.log(list);
         userList(list);
     });
     
@@ -641,8 +637,6 @@ function socket_comm() {
 
     socket.on('new score', function(new_scores) {
         scores = new_scores;
-        console.log("new score");
-        console.log(scores);
         updateListScores();
     });
     
@@ -780,7 +774,6 @@ function socket_comm() {
     socket.on("stoc round start", function (info) {
         container.innerHTML = "";
         zoneDessin();
-        console.log(info.mot);
         wordToFind.textContent = info.mot;
         if (usersDessinateurs.includes(username)) {
             outils[outil_id].binds();
