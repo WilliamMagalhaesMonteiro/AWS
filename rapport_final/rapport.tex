@@ -19,7 +19,7 @@
         \subsection{Les technologies que l'on a utilisées}
             \paragraph{}
             Pour la partie dessin, nous aurions pu utiliser l'API de base pour dessiner sur des canvas HTML,
-            mais nous avons plutôt choisi d'utiliser le framework Konva.js pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
+            mais nous avons choisi d'utiliser le framework Konva.js pour nous simplifier la tâche, et obtenir plus de fonctionnalités.
             \paragraph{}
             Pour gérer la communication, nous avons choisi Socket.io, qui permet de gérer la communication en temps réel,
             aussi bien pour le dessin que pour le chat. Pour le reste, nous avons utilisé Express.
@@ -34,8 +34,8 @@
             Il existe donc trois pages autres que celle du jeu :
             \begin{itemize}
                 \item Une page d'accueil,
-                \item une page d'authentification pour se connecter,
-                \item une page de création de compte.
+                \item Une page d'authentification pour se connecter,
+                \item Une page de création de compte.
             \end{itemize}
             \paragraph{}
             Pour gérer les réponses du serveur sur ces deux dernières,
@@ -47,7 +47,7 @@
             Dès qu'une requête de connexion ou de création est reçue,
             le serveur interroge l'instance SQLite et ajoute le compte ou autorise la connexion en conséquence.
 
-            La base de données ne contient qu'une page pour les comptes, avec un nom d'uilisateur, un mot de passe haché,
+            La base de données ne contient qu'une table pour les comptes, avec un nom d'utilisateur, un mot de passe haché,
             et une valeur aléatoire utilisée comme padding sur le mot de passe avant le hachage.
             \paragraph{}
             Pour la liste des mots à dessiner qui peuvent être proposés aux joueurs,
@@ -101,7 +101,7 @@
                 Une autre room existe où sont placés les utilisateurs qui doivent deviner le mot et qui ne l'ont pas encore trouvé.
                 Les messages du chat envoyés par les dessinateurs et ceux qui ont devinés ne sont ainsi pas visibles par ceux qui cherchent.
                 \paragraph{}
-                Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur.
+                Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur, qui les transmet à son tour aux autres utilisateurs.
                 Pour les traits et les disques,
                 des coordonnées et une couleur sont transmises ce qui permet aux autres utilisateurs de créer des objet parfaitement indentiques de leur côté.
                 \paragraph{}
@@ -111,14 +111,14 @@
                 
                 Dans un premier temps, le remplissage n'a qu'une seule couleur.
                 On peut donc transmettre la couleur en parallèle du tableau,
-                et réduire 'information de chaque pixel à un booléen.
+                et réduire l'information de chaque pixel à un booléen.
                 Pour des raisons techniques, les pixels sont représentés par des octets,
                 bien qu'ils ne puissent prendre que deux valeurs.
 
                 Cela donne un tableau de 0 et de 1.
                 Pour réduire encore le volume de données,
                 chaque suite de 1 est remplacée par deux nombres :
-                la position du premier 1 dans le tableau, et la longueur de la suite.
+                la position du premier 1 dans le tableau, et la longueur de la suite horizontale.
                 Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.
                 \paragraph{}
                 L'ensemble des modifications apportées au dessin sont traités et enregistrées par le serveur,
@@ -126,20 +126,28 @@
                 Ansi, lorsqu'un nouvel utilisateur rejoint le jeu en cours de route,
                 la pile d'objets dessinés lui est envoyée pour qu'il puisse afficher le dessin tel qu'il est à cet instant.
 
+       
+
     \section{Ce que l'on a appris}
-        \begin{itemize}
-            \item Travailler en groupe (avec les 3 rôles à permuter par semaine).
+
+        \subsection{Travailler en groupe (avec les 3 rôles à permuter par semaine)}
+            Cela a sûrement été la partie la plus difficile.
+    
+        \begin{itemize}        
             \item Gestion des requêtes des clients, réponses, redirections, etc.
             \item Gestion d'une petite base de données.
-            \item Ecriture de scipt javascript complexe pour une application.
+            \item Écriture de script javascript complexe pour une application.
             \item Communication en temps réel entre un serveur et plusieurs clients.
             \item Sécuriser une base de données contenant des mots de passe.
         \end{itemize}
     \section{Ce que l'on pourrait ajouter ou améliorer}
+        \subsection{Fonctionnalités diverses du jeu}
         \begin{itemize}
-            \item Fonctionnalités diverses du jeu.
-            \item Page dédiée à la modification de la liste de mots par des admins.
-            \item Autoriser aux utilisateurs à ne pas créer un compte.
-            \item etc.
+            \item Ajouter d'autres formes prédéfinies.
+            \item Ajouter la possibilité de choisir une couleur plus précisément avec un sélecteur de couleurs        
         \end{itemize}
+
+        \subsection{Page dédiée à la modification de la liste de mots par des admins.}
+        
+        \subsection{Autoriser aux utilisateurs à ne pas créer un compte}
 \end{document}
