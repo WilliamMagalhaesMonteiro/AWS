@@ -14,7 +14,7 @@
             Un joueur doit faire deviner un mot en le dessinant et les autres doivent le trouver le plus vite possible.
             Le projet est très inspiré de \href{https://skribbl.io/}{Skribbl.io}.
             \paragraph{}
-            Il nous faut donc au moins la possibilité de dessiner, avec le partage du dessin en temps réel,
+            Il nous fallait donc au moins la possibilité de dessiner, avec le partage du dessin en temps réel,
             et un chat où les utilisateurs peuvent tenter de deviner le mot.
         \subsection{Les technologies que l'on a utilisées}
             \paragraph{}
@@ -54,19 +54,23 @@
             Pour la liste des mots à dessiner qui peuvent être proposés aux joueurs,
             elle est enregistrée dans un simple fichier.
             En effet, comme la liste est fixée, et non modifiable par un utilisateur,
-            il n'est pas nécessaire de l'ajouter à la base.
+            il na pas été nécessaire de l'ajouter à la base.
         \subsection{Partie jeu}
             \subsubsection{Dessin}
                 \paragraph{}
                 Pour la partie dessin, on utilise des objets Konva.
-                Pour chaque outil disponible, une série de 'binds' est définie,
-                et appliquée lorsque l'utilisateur clique sur le bouton qui correspond.
-                Chaque nouvel élément du dessin est un nouvel objet Konva qui est ajouté au Layer.
+                Pour chaque outil disponible, une série de `binds' est définie,
+                liant un événement à une fonction.
+                Dès que l'utilisateut change d'outil avec les boutons en bas, les binds sont modifiés.
+
+                Chaque nouvel élément du dessin est un nouvel objet Konva
+                qui est ajouté à la liste de ceux qui sont affichés dans la zone de dessin.
+                Certains attributs de ces objets, comme notamment la couleur,
+                sont définis selon ce que l'utilisateur a sélectionné.
                 \paragraph{}
-                Pour le crayon ou la gomme, à chaque nouveau clic un objet Konva.Line est créé.
+                Pour le crayon ou la gomme, à chaque nouveau clic, un objet Konva.Line est créé.
                 Tant que le clic est enfoncé, et à chaque mouvement de la souris, un point est ajouté à la ligne.
-                Un tel objet représente en effet une suite de segments reliés entre eux.
-                Les attributs de l'objet sont définis en fonction des choix de l'utilisateur pour l'épaisseur et la couleur.
+                Un tel objet représente en effet une suite de segments reliés entre eux bout à bout.
                 \paragraph{}
                 Pour l'outil `rond', un disque est ajouté à chaque nouveau clic.
                 Cet outil très rudimentaire a été ajouté en prévision d'une modification ou d'une amélioration,
@@ -78,18 +82,16 @@
                 Après avoir obtenu une nouvelle matrice de pixels correspondant à la zone à colorier,
                 une image bitmap est crée, et est utilisée pour initialiser un objet Konva.Image.
 
-                Cet outil est assez important dans une application de dessin,
-                et aurait manqué si il n'avait pas été ajouté.
+                L'ajout de cet outil a demandé beaucoup de temps,
+                mais il est assez important dans une application de dessin,
+                et aurait manqué si il n'y avait pas été.
                 \paragraph{}
                 Pour les boutons `undo' et `redo' (les flèches), un simple nombre entier est incrémenté ou décrémenté.
-                Ce nombre représente le nombre d'objet de la liste qui sont affichés à l'écran.
-                Lorque le compteur diminue, un objet est effacé de la zone de dessin.
-                A l'inverse le dernier objet a avoir été enlevé est réajouté quand le compteur augmente.
+                Ce nombre représente le nombre d'objet de la liste qui sont affichés à l'écran parmi ceux qui ont été dessinés.
                 Si l'utilisateur dessin un nouvel élément alors que certains on été effacés,
-                ceux-ci sont définitivement supprimés,
-                et le comtpeur prend comme valeur la taille du tableau d'objets affichés.
+                ceux-ci sont définitivement supprimés.
 
-                Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets du Layer.
+                Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets.
             \subsubsection{Communications}
                 \paragraph{}
                 Une fois sur la page du jeu, toutes les communications entre les clients et le serveur sont gérées avec Socket.io.
@@ -102,9 +104,11 @@
                 Une autre room existe où sont placés les utilisateurs qui doivent deviner le mot et qui ne l'ont pas encore trouvé.
                 Les messages du chat envoyés par les dessinateurs et ceux qui ont devinés ne sont ainsi pas visibles par ceux qui cherchent.
                 \paragraph{}
-                Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur, qui les transmet à son tour aux autres utilisateurs.
+                Dès qu'un dessinateur modifie le dessin, l'information est transmise au serveur,
+                qui la transmet à son tour aux autres utilisateurs.
                 Pour les traits et les disques,
-                des coordonnées et une couleur sont transmises ce qui permet aux autres utilisateurs de créer des objet parfaitement indentiques de leur côté.
+                des coordonnées et une couleur sont transmises ce qui permet aux autres
+                clients de re-créer des objet parfaitement indentiques de leur côté.
                 \paragraph{}
                 Pour le remplissage, c'est un peu plus compliqué.
                 Transmettre la matrice de pixels entière serait en effet assez lourd ($\approx$ 1Mo par image).
@@ -112,51 +116,37 @@
                 
                 Dans un premier temps, le remplissage n'a qu'une seule couleur.
                 On peut donc transmettre la couleur en parallèle du tableau,
-                et réduire l'information de chaque pixel à un booléen.
-                Pour des raisons techniques, les pixels sont représentés par des octets,
-                bien qu'ils ne puissent prendre que deux valeurs.
+                et réduire l'information de chaque pixel à un booléen
+                (0 = transparent, 1 = couleur du remplissage).
 
                 Cela donne un tableau de 0 et de 1.
                 Pour réduire encore le volume de données,
                 chaque suite de 1 est remplacée par deux nombres :
                 la position du premier 1 dans le tableau, et la longueur de la suite horizontale.
                 Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.
+
+                Avec ces techniques, le remplissage de toute le zone de dessin pour changer la couleur du fond,
+                par exemple, tient en quelques octets.
                 \paragraph{}
-                L'ensemble des modifications apportées au dessin sont traités et enregistrées par le serveur,
-                y compris undo, redo et la suppression.
-                Ansi, lorsqu'un nouvel utilisateur rejoint le jeu en cours de route,
+                L'ensemble des modifications apportées au dessin sont traitées et enregistrées par le serveur,
+                y compris undo et redo.
+                Ainsi, lorsqu'un nouvel utilisateur rejoint le jeu en cours de route,
                 la pile d'objets dessinés lui est envoyée pour qu'il puisse afficher le dessin tel qu'il est à cet instant.
                 \paragraph{}
-                Le déroulement du jeu est planifié par le serveur.
-                Au début de chaque manche, le serveur désigne donc le ou les dessinateurs,
-                et envoie un message à ceux-ci contenant le mot qu'ils doivent faire deviner.
-                Il attend ensuite de recevoir la confirmation de tous les dessinateurs (quand il cliquent sur `commencer') pour signaler
-                à tout le monde que la manche commence.
-                \paragraph{}
-                A chaque fois qu'un joueur faisant partie de ceux qui devinent envoie un message dans le chat,
-                il est vérifié si il correspond au mot à deviner ou non pour savoir si il a gagné.
-                \paragraph{}
-                Lorque le temps est écoulé ou que tous les joueurs ont trouvé le mot, la manche se termine,
-                les points sont calculés en fonction de l'ordre dans lequels les joueurs ont deviné,
-                et une nouvelle manche commence.
-                \paragraph{}
-                Pour choisir les dessinateurs, un premier est désigné de façon cyclique (l'un après l'autre),
-                puis, s'il y en a d'autres, de façons aléatoire.
-                Ainsi, un tour de jeu correspond à un cycle,
-                ce qui permet à chaque joueur de dessiner au moins une fois par tour.
-                Lorsque le nombre de tours joué atteint le nombre spécifié au début par le créateur de la partie,
-                le jeu se termine et le joueur à avoir marqué le plus de points est vainqueur.
-
+                Tout le déroulement du jeu est planifié par le serveur.
+                L'enchaînement des manches, des tours de jeu, le choix des dessinateurs,
+                du mot à deviner, la vérification des messages dans le chat pour voir qui a deviné, etc.
     \section{Ce que l'on a appris}
         \subsection*{Travailler en groupe (avec les 3 rôles à permuter par semaine)}
             \paragraph{}
             Cela a sûrement été la partie la plus difficile.
             En effet, nous ne nous sommes pas rencontrés souvent,
-            et avons donc dû communiquer presque exclusivement sur un serveur discord...
+            et avons donc dû communiquer presque exclusivement sur un serveur discord.
             \paragraph{}
             Le fait d'interchanger les rôles chaque semaine était une experience assez intéressante,
-            nous forçant tous à fournir une partie du travail,
-            et à apporter notre vision au projet.
+            nous obligeant à fournir un travail que l'on n'aurait pas fait naturellement.
+            Cela nous a permi d'expérimenter dans plusieurs postes,
+            en divisant le travail différemment de nos habitudes.
         \subsection*{Gestion des requêtes des clients, réponses, redirections}
             \paragraph{}
             Nous avons appris comment fonctionne une application web classique,
@@ -165,27 +155,49 @@
             \paragraph{}
             Nous avons utilisé des middlewares pour gérer l'authentification,
             les sessions et l'interrogation de la base de données.
-        
-        \subsection*{Gestion d'une petite base de données}
-            \paragraph{}
-            Pour enregistrer les comptes,
-            nous avons dû apprendre à manipuler une petite base de données dans le script du serveur.
         \subsection*{Écriture de script javascript complexe pour une application}
             \paragraph{}
-            Les scripts côté serveur et client qui gère la partie jeu sont assez longs et complexes.
+            Les scripts côté serveur et client qui gèrent la partie jeu sont assez longs et complexes.
             Nous avons donc lors de leur écriture beacoup progressé en javascript.
             \paragraph{}
             Certains aspects notamment comme l'outil remplissage avec des matrices de pixels et des images bitmap 
-            ont été particulièrement instructifs.
+            ont été particulièrement techniques et instructifs.
         \subsection*{Communication en temps réel entre un serveur et plusieurs clients}
             \paragraph{}
             Pour obtenir un jeu fonctionnel en temps réel, nous avons dû apprendre à bien manipuler Socket.io.
             Cette partie est en effet une nouveauté,
-            bien différente de la programmation séquentielle à laquelle nous sommes habitués.
+            bien différente de la programmation séquentielle à laquelle nous sommes plutôt habitués.
+            \paragraph{}
+            Il nous a fallu écrire tout un tas de fonctions qui sont appelées lorsqu'un message du serveur est reçu.
+            Toutes ces fonction doivent interagir avec les mêmes variables, sans pour autant avoir un ordre d'exécution prévisible.
+            Cela nous a donné du fil à retordre, surtout pour penser à toutes les possibilités et gérer tous les cas.
+            \paragraph{}
+            Pour cette raison, certains bugs, même basiques, sont restés inconnus longtemps.
+            Nous avons eu besoin d'organiser des parties en groupe afin de bien pouvoir tester les différentes fonctionnalités du jeu.
+            Faire jouer un grand nombre de personnes différentes permet aussi de vérifier plus de cas,
+            chacun venant avec des innovations et une façon de jouer.
+            \paragraph{}
+            Par exemple, avoir un nom d'utilisateur avec des espaces provoquait des bugs,
+            mais nous ne nous étions pas rendus comptes pendant longtemps.
+            Pour cause, aucun d'entre nous n'avais pensé à créer un compte avec un nom en plusieurs mots.
+            Il a fallu qu'un joueur externe au projet teste l'application pour que l'on s'en rende compte.
+            \paragraph{}
+            Tout cela nous a bien instruit sur l'importance d'organiser des phases de tests
+            avec plusieurs personnes différentes,
+            et surtout des personnes qui ne font pas partie de l'équipe du projet.
+            Cela devient de plus en plus important lorsque le projet gagne en complexité.
         \subsection*{Sécuriser une base de données contenant des mots de passe.}
             \paragraph{}
-            Nous avons pu appliquer directement les enseignements de notre maître en sécurité avec notre base de données.
+            Pour enregistrer les comptes,
+            nous avons dû apprendre à manipuler une petite base de données SQLite dans le script du serveur.
+            \paragraph{}
+            Nous avons ensuite pu appliquer les méthodes que l'on a vues en théories
+            pour sécuriser le contenu de la base de données, même en cas d'intrusion, avec le hachage.
             Cela nous a permis de nous initier à l'utilisation de la cryptographie dans les applications web en javascript.
+        \subsection*{Bonus.}
+            \paragraph{}
+            Tout cela nous a aussi appris à utiliser les outils des navigateurs pour inspecter les pages,
+            la console, etc.
     \section{Ce que l'on pourrait ajouter ou améliorer}
         \subsection*{Fonctionnalités diverses du jeu}
             \begin{itemize}
@@ -196,7 +208,7 @@
                 pouvant être placées avec précisions, bougées, etc.
 
                 Konva permet de manipuler des objets graphiques facilement,
-                et nous aurions pu en profiter pour facilement implémenter ces fonctionnalités.
+                et nous aurions pu en profiter pour aisément implémenter ces fonctionnalités.
                 \item Ajouter un sélecteur de couleurs
                 
                 Notre jeu ne dispose que d'une quantité limitée de couleurs parmi lesquelles choisir.
@@ -222,9 +234,9 @@
             et ne peut être modifiée que par l'administrateur du serveur.
             \paragraph{}
             Une bonne amélioration à apporter serait de l'y ajouter,
-            et de créer une page accessible par des utilisateurs ayant un rôle admin qui leut permettent d'ajouter ou d'enlever des mots.
+            et de créer une page accessible par des utilisateurs ayant un rôle admin qui leur permettrait d'ajouter ou d'enlever des mots.
             Nous aurions alors besoin d'ajouter des rôles et privilèges aux utilisateurs,
-            ce qui peut être un aspect intéressant à apprendre.
+            ce qui aurait pu être un aspect intéressant à développer.
         \subsection*{Autoriser aux utilisateurs à ne pas créer un compte}
             \paragraph{}
             Les utilisateurs sont forcés de créer un compte pour jouer au jeu.
@@ -235,6 +247,11 @@
             Il serait aussi possible par la même occasion d'ajouter des données liées aux comptes,
             comme des statistiques, visibles sur une page dédiée.
             Cela justifierait vraiment la création des comptes pour les utilisateurs.
+    \section{Conclure}
+        \paragraph{}
+        Finalement, ce projet nous a fait découvrir un domaine qui était assez nouveau pour nous.
 
-
+        Nous n'avons pas choisi le sujet le plus simple à réaliser,
+        et cela a mené à beaucoup d'investissement dessus (surtout dans la période suivant la dernière soutenance).
+        Tout ceci nous a cependant menés à approfondir le sujet et à en apprendre encore plus.
 \end{document}
