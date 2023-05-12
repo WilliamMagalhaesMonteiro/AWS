@@ -7,6 +7,9 @@
 
 \begin{document}
     \maketitle
+    \begin{center}
+        \href{https://github.com/WilliamMagalhaesMontei/AWS}{Lien vers  le répertoire GitHub}
+    \end{center}
     \section{Présentation du projet}
         \subsection{L'idée de base}
             \paragraph{}
@@ -25,7 +28,7 @@
             Pour gérer la communication, nous avons choisi Socket.io, qui permet de gérer la communication en temps réel,
             aussi bien pour le dessin que pour le chat. Pour le reste, nous avons utilisé Express.
             \paragraph{}
-            Nous utilisons aussi Express session pour gérer l'authentification et les sessions.
+            Nous utilisons aussi Express-session pour gérer l'authentification et les sessions.
             Les comptes sont gérés avec SQLite.
             Nous avons commencé avec une base de données MySQL mais avons décidé de changer pour simplifier le projet et (surtout) l'hébergement (finalement sur Glitch).
     \section{Ce que l'on a fait - Description du projet}
@@ -47,21 +50,19 @@
             \paragraph{}
             Dès qu'une requête de connexion ou de création est reçue,
             le serveur interroge l'instance SQLite et ajoute le compte ou autorise la connexion en conséquence.
-
             La base de données ne contient qu'une table pour les comptes, avec un nom d'utilisateur, un mot de passe haché,
             et une valeur aléatoire utilisée comme padding sur le mot de passe avant le hachage.
             \paragraph{}
             Pour la liste des mots à dessiner qui peuvent être proposés aux joueurs,
             elle est enregistrée dans un simple fichier.
             En effet, comme la liste est fixée, et non modifiable par un utilisateur,
-            il na pas été nécessaire de l'ajouter à la base.
+            il n'a pas été nécessaire de l'ajouter à la base.
         \subsection{Partie jeu}
             \subsubsection{Dessin}
                 \paragraph{}
                 Pour la partie dessin, on utilise des objets Konva.
-                Pour chaque outil disponible, une série de `binds' est définie,
-                liant un événement à une fonction.
-                Dès que l'utilisateut change d'outil avec les boutons en bas, les binds sont modifiés.
+                Pour chaque outil disponible, une série de `binds' est définie, liant un événement à une fonction.
+                Dès que l'utilisateur change d'outil avec les boutons en bas, les binds sont modifiés.
 
                 Chaque nouvel élément du dessin est un nouvel objet Konva
                 qui est ajouté à la liste de ceux qui sont affichés dans la zone de dessin.
@@ -84,11 +85,11 @@
 
                 L'ajout de cet outil a demandé beaucoup de temps,
                 mais il est assez important dans une application de dessin,
-                et aurait manqué si il n'y avait pas été.
+                et aurait manqué si il n'avait pas été implémenté.
                 \paragraph{}
                 Pour les boutons `undo' et `redo' (les flèches), un simple nombre entier est incrémenté ou décrémenté.
                 Ce nombre représente le nombre d'objet de la liste qui sont affichés à l'écran parmi ceux qui ont été dessinés.
-                Si l'utilisateur dessin un nouvel élément alors que certains on été effacés,
+                Si l'utilisateur dessine un nouvel élément alors que certains on été effacés,
                 ceux-ci sont définitivement supprimés.
 
                 Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets.
@@ -112,19 +113,15 @@
                 \paragraph{}
                 Pour le remplissage, c'est un peu plus compliqué.
                 Transmettre la matrice de pixels entière serait en effet assez lourd ($\approx$ 1Mo par image).
-                Il est assez simple de réduire le volume de données, et on a utilisé deux solutions.
-                
+                Il est assez simple de réduire le volume de données, et on a utilisé deux solutions.\\                
                 Dans un premier temps, le remplissage n'a qu'une seule couleur.
-                On peut donc transmettre la couleur en parallèle du tableau,
-                et réduire l'information de chaque pixel à un booléen
-                (0 = transparent, 1 = couleur du remplissage).
-
+                On peut donc transmettre la couleur en parallèle du tableau, une seule fois et réduire l'information de chaque pixel à un booléen
+                (0 = transparent, 1 = couleur du remplissage). \\
                 Cela donne un tableau de 0 et de 1.
                 Pour réduire encore le volume de données,
                 chaque suite de 1 est remplacée par deux nombres :
                 la position du premier 1 dans le tableau, et la longueur de la suite horizontale.
-                Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.
-
+                Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.\\
                 Avec ces techniques, le remplissage de toute le zone de dessin pour changer la couleur du fond,
                 par exemple, tient en quelques octets.
                 \paragraph{}
@@ -135,7 +132,7 @@
                 \paragraph{}
                 Tout le déroulement du jeu est planifié par le serveur.
                 L'enchaînement des manches, des tours de jeu, le choix des dessinateurs,
-                du mot à deviner, la vérification des messages dans le chat pour voir qui a deviné, etc.
+                du mot à deviner, la vérification des messages dans le chat pour voir qui a deviné, etc, est géré par le serveur.
     \section{Ce que l'on a appris}
         \subsection*{Travailler en groupe (avec les 3 rôles à permuter par semaine)}
             \paragraph{}
@@ -191,8 +188,7 @@
             Pour enregistrer les comptes,
             nous avons dû apprendre à manipuler une petite base de données SQLite dans le script du serveur.
             \paragraph{}
-            Nous avons ensuite pu appliquer les méthodes que l'on a vues en théories
-            pour sécuriser le contenu de la base de données, même en cas d'intrusion, avec le hachage.
+            Nous avons ensuite pu appliquer les méthodes que l'on a vues en cours pour sécuriser le contenu de la base de données, même en cas d'intrusion, avec le hachage.
             Cela nous a permis de nous initier à l'utilisation de la cryptographie dans les applications web en javascript.
         \subsection*{Bonus.}
             \paragraph{}
@@ -247,10 +243,9 @@
             Il serait aussi possible par la même occasion d'ajouter des données liées aux comptes,
             comme des statistiques, visibles sur une page dédiée.
             Cela justifierait vraiment la création des comptes pour les utilisateurs.
-    \section{Conclure}
+    \section{Conclusion}
         \paragraph{}
         Finalement, ce projet nous a fait découvrir un domaine qui était assez nouveau pour nous.
-
         Nous n'avons pas choisi le sujet le plus simple à réaliser,
         et cela a mené à beaucoup d'investissement dessus (surtout dans la période suivant la dernière soutenance).
         Tout ceci nous a cependant menés à approfondir le sujet et à en apprendre encore plus.
