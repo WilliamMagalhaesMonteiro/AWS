@@ -92,7 +92,7 @@
                 Si l'utilisateur dessine un nouvel élément alors que certains on été effacés,
                 ceux-ci sont définitivement supprimés.
 
-                Le bouton `suppression' est quand à lui plus simple, il supprime simplement tous les objets.
+                Le bouton `suppression' est quant à lui plus simple, il supprime simplement tous les objets.
             \subsubsection{Communications}
                 \paragraph{}
                 Une fois sur la page du jeu, toutes les communications entre les clients et le serveur sont gérées avec Socket.io.
@@ -113,15 +113,18 @@
                 \paragraph{}
                 Pour le remplissage, c'est un peu plus compliqué.
                 Transmettre la matrice de pixels entière serait en effet assez lourd ($\approx$ 1Mo par image).
-                Il est assez simple de réduire le volume de données, et on a utilisé deux solutions.\\                
+                Il est assez simple de réduire le volume de données, et on a utilisé deux solutions.
+
                 Dans un premier temps, le remplissage n'a qu'une seule couleur.
                 On peut donc transmettre la couleur en parallèle du tableau, une seule fois et réduire l'information de chaque pixel à un booléen
-                (0 = transparent, 1 = couleur du remplissage). \\
+                (0 = transparent, 1 = couleur du remplissage).
+                
                 Cela donne un tableau de 0 et de 1.
                 Pour réduire encore le volume de données,
                 chaque suite de 1 est remplacée par deux nombres :
                 la position du premier 1 dans le tableau, et la longueur de la suite horizontale.
-                Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.\\
+                Il ne reste plus qu'à transmettre ces informations pour reconstituer l'image complète.
+                
                 Avec ces techniques, le remplissage de toute le zone de dessin pour changer la couleur du fond,
                 par exemple, tient en quelques octets.
                 \paragraph{}
