@@ -405,7 +405,8 @@ function gameServer(roomPath) {
             socket.emit("game infos", {
                 dessinateurs: usrs_dessinateurs, mot: game_mot_cache,
                 vainqueurs: users_vainqueurs, scores: Array.from(scores, ([name, value]) => ({ name, value })),
-                temps_restant: Math.floor((Date.now() - instantDebut) / 1000)
+                // temps qui reste dans le round en cours (à une seconde près)
+                temps_restant: Math.floor(duree_round - (instantDebut ? ((Date.now() - instantDebut) / 1000) : 0))
             });
             socket.join(roomDevinateurs);
 
