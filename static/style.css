@@ -67,3 +67,12 @@ body {
     border-style: double;
     border-radius: 10px;
 }
+
+#retour input {
+    font-size: 20px;
+    padding: 1rem;
+    margin-top: 0;
+    background-color: #ffa24a;
+    border: 5px solid #ff5d12;
+    border-radius: 10px;
+}

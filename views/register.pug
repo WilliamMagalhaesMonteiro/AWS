@@ -14,5 +14,7 @@ html
         input(id='pwd', type='password', name='password', placeholder='Mot de passe', required)
         input(id='pwd_conf', type='password', name='confirm_password', placeholder='Confirmer le mot de passe', required)
         input(type='submit', value='Valider')
+      form(method='GET', action='/', id='retour')
+        input(type='submit', value='Retour')
     if message
       p.error= message
