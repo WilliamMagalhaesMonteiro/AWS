@@ -58,6 +58,20 @@ const sessionMiddleware = session({
     saveUninitialized: true
 });
 
+// Forçage de https (pour glitch).
+// En commentaire car ne marche pas en local.
+/*function checkHttps(req, res, next) {
+    // Vérification de protocol, https est forcé
+    console.log(req);
+    console.log(req.get('X-Forwarded-Proto'));
+    if(req.get('X-Forwarded-Proto').indexOf("https") != -1) {
+        return next();
+    } else {
+        res.redirect('https://' + req.hostname + req.url);
+    }
+}
+app.all('*', checkHttps);*/
+
 app.use(sessionMiddleware);
 
 app.use(express.json());
